@@ -468,12 +468,12 @@ class VideoCall(VoiceCall):
                         self.audio_output.write(audio_frame)
                         # Store the video frame back in the queue
                         with self.queue_lock:
-                            self.video_queue.put((video_frame, video_timestamp))
+                            video_queue.put((video_frame, video_timestamp))
                     # If the video frame is ahead of the audio frame
                     else:
                         # Store the audio frame back in the queue
                         with self.queue_lock:
-                            self.audio_queue.put((audio_frame, audio_timestamp))
+                            audio_queue.put((audio_frame, audio_timestamp))
                     # If only an audio frame is available
                 elif audio_frame is not None:
                     # Play the audio frame
