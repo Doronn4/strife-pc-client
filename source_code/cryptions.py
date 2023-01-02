@@ -126,6 +126,3 @@ class AESCipher:
     @staticmethod
     def generate_key():
         return os.urandom(32)
-
-
-
