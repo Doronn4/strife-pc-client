@@ -6,6 +6,7 @@ import queue
 class ClientCom:
 
     def __init__(self, server_port: int, server_ip: str, message_queue: queue.Queue):
+        self.CHUNK_SIZE = 4096
         self.server_port = server_port
         self.server_ip = server_ip
         self.message_queue = message_queue
@@ -39,16 +40,39 @@ class ClientCom:
         if type(data) != bytes:
             data = data.encode()
 
-        # Get the size of the data and convert it to a string with a length of 2
-        size = str(len(data)).zfill(2)
-        # Send the size first
-        self.socket.send(size.encode())
-
         # Send the data
         self.socket.send(data)
 
-    def recv_file(self, file_size: int):
-        pass
+    def recv_large(self, size: int):
+        """
+        Receives a large sized data object (For example a picture)
+        :param size: The size of the data
+        :return: The data
+        """
+        # Check if the client com is running
+        if not self.running:
+            raise self.NOT_RUNNING_EXCEPTION
+
+        # Initialize an empty bytearray to store the file data
+        file_data = bytearray()
+
+        # Keep receiving data until the entire file has been received
+        while len(file_data) < size:
+            try:
+                chunk = self.socket.recv(self.CHUNK_SIZE)
+            # Handle exceptions
+            except socket.error:
+                file_data = None
+                self.close()
+                break
+
+            # Check if there was anything received
+            if not chunk:
+                break
+
+            file_data += chunk
+
+        return file_data
 
     def _main_loop(self):
         """
@@ -73,3 +97,6 @@ class ClientCom:
             else:
                 # Put the received data inside the message queue
                 self.message_queue.put(data)
+    
+    def close(self):
+        pass

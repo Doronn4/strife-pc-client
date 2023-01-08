@@ -346,59 +346,11 @@ class Protocol:
             opcode_name = self.s_general_opcodes[opcode]
             ret['opname'] = opcode_name
 
-            # Get the parameters names of the message
-            params_names = self.s_opcodes_params[self.s_general_opcodes[opcode]]
-
-            # Assign a value for each parameter in a dict
-            for i in range(len(values)):
-                value = values[i]
-                param_name = params_names[i]
-
-                # If the value is a list
-                if len(value.split(self.LIST_SEPARATOR)) > 1:
-                    # Check if the list is of integers
-                    if value.split(self.LIST_SEPARATOR)[0].isnumeric():
-                        ret[param_name] = [int(v) for v in value.split(self.LIST_SEPARATOR)]
-                    else:
-                        ret[param_name] = value.split(self.LIST_SEPARATOR)
-
-                # If the value isn't a list
-                else:
-                    # Check if the value is an integer
-                    if value.isnumeric():
-                        ret[param_name] = int(value)
-                    else:
-                        ret[param_name] = value
-
         # If the message was received in the chat messages channel
         elif type == 'chat':
             # The first value in the dict is the opcode's name (opname)
             opcode_name = self.s_chat_opcodes[opcode]
             ret['opname'] = opcode_name
-
-            # Get the parameters names of the message
-            params_names = self.s_opcodes_params[self.s_chat_opcodes[opcode]]
-
-            # Assign a value for each parameter in a dict
-            for i in range(len(values)):
-                value = values[i]
-                param_name = params_names[i]
-
-                # If the value is a list
-                if len(value.split(self.LIST_SEPARATOR)) > 1:
-                    # Check if the list is of integers
-                    if value.split(self.LIST_SEPARATOR)[0].isnumberic():
-                        ret[param_name] = [int(v) for v in value.split(self.LIST_SEPARATOR)]
-                    else:
-                        ret[param_name] = value.split(self.LIST_SEPARATOR)
-
-                # If the value isn't a list
-                else:
-                    # Check if the value is an integer
-                    if value.isnumeric():
-                        ret[param_name] = int(value)
-                    else:
-                        ret[param_name] = value
 
         # If the message was received in the files messages channel
         elif type == 'files':
@@ -406,29 +358,28 @@ class Protocol:
             opcode_name = self.s_files_opcodes[opcode]
             ret['opname'] = opcode_name
 
-            # Get the parameters names of the message
-            params_names = self.s_opcodes_params[self.s_files_opcodes[opcode]]
+        # Get the parameters names of the message
+        params_names = self.s_opcodes_params[self.s_general_opcodes[opcode]]
 
-            # Assign a value for each parameter in a dict
-            for i in range(len(values)):
-                value = values[i]
-                param_name = params_names[i]
+        # Assign a value for each parameter in a dict
+        for i in range(len(values)):
+            value = values[i]
+            param_name = params_names[i]
 
-                # If the value is a list
-                if len(value.split(self.LIST_SEPARATOR)) > 1:
-                    # Check if the list is of integers
-                    if value.split(self.LIST_SEPARATOR)[0].isnumberic():
-                        ret[param_name] = [int(v) for v in value.split(self.LIST_SEPARATOR)]
-                    else:
-                        ret[param_name] = value.split(self.LIST_SEPARATOR)
-
-                # If the value isn't a list
+            # If the value is a list
+            if len(value.split(self.LIST_SEPARATOR)) > 1:
+                # Check if the list is of integers
+                if value.split(self.LIST_SEPARATOR)[0].isnumeric():
+                    ret[param_name] = [int(v) for v in value.split(self.LIST_SEPARATOR)]
                 else:
-                    # Check if the value is an integer
-                    if value.isnumeric():
-                        ret[param_name] = int(value)
-                    else:
-                        ret[param_name] = value
+                    ret[param_name] = value.split(self.LIST_SEPARATOR)
 
+            # If the value isn't a list
+            else:
+                # Check if the value is an integer
+                if value.isnumeric():
+                    ret[param_name] = int(value)
+                else:
+                    ret[param_name] = value
         return ret
 
