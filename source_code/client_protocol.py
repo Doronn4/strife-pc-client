@@ -7,7 +7,7 @@ class Protocol:
         # A char for separating fields in the message
         self.FIELD_SEPARATOR = '@'
         # A chat for separating items in a list of items in a field
-        self.LIST_SEPARATOR = '$'
+        self.LIST_SEPARATOR = '#'
 
         # Opcodes to construct messages (client -> server)
         self.general_opcodes = {
@@ -323,7 +323,7 @@ class Protocol:
         # Return the message after protocol
         return f'{str(size).zfill(2)}{msg}'
 
-    def unprotocol_msg(self, type, raw_message):
+    def unprotocol_msg(self, type: str, raw_message):
         """
         Deconstructs a message received from the server with the client-server's protocol
         :param type: The type of the message (general, chat, file)
@@ -357,7 +357,7 @@ class Protocol:
                 # If the value is a list
                 if len(value.split(self.LIST_SEPARATOR)) > 1:
                     # Check if the list is of integers
-                    if value.split(self.LIST_SEPARATOR)[0].isnumberic():
+                    if value.split(self.LIST_SEPARATOR)[0].isnumeric():
                         ret[param_name] = [int(v) for v in value.split(self.LIST_SEPARATOR)]
                     else:
                         ret[param_name] = value.split(self.LIST_SEPARATOR)

@@ -150,27 +150,28 @@ class VoiceCall:
         # A dict of the current call members ips as the keys and their names as the value
         self.call_members = {}
 
+        # A dict of the connected users' sockets as the values and their ips as the keys
+        self.connected_clients = {}
+
         # Constants for the audio info
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
         self.RATE = 44100
         self.CHUNK = 4096
-
         # Audio object
         self.audio = pyaudio.PyAudio()
-        # The audio input and output objects
+        # The audio output object
         self.audio_output = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
                                             output=True, frames_per_buffer=self.CHUNK)
+        # The audio input object
         self.audio_input = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
-                                           input=True, frames_per_buffer=self.CHUNK)
+                                           input=True, frames_per_buffer=self.CHUNK,
+                                           stream_callback=self.audio_stream_callback)
 
-        # A dict of the connected users' sockets as the values and their ips as the keys
-        self.send_list = {}
+        # Start handling the server messages
+        threading.Thread(target=self.handle_server_messages).start()
 
-        # Start the main function thread
-        threading.Thread(target=self.main).start()
-
-        # Start sending the audio in a thread
+        # Start sending the audio
         threading.Thread(target=self.send_audio_stream).start()
 
     def audio_stream_callback(self, in_data, frame_count, time_info, status):
@@ -179,13 +180,13 @@ class VoiceCall:
         :param in_data: The audio data from the microphone
         :param frame_count: The frame count
         :param time_info: The time info
-        :param status: THe status of the microphone
+        :param status: The status of the microphone
         :return: ---
         """
         # Check if mic is muted or not
         if not self.muted:
             # Iterate over all the sockets of the clients in the call and send them the microphone data
-            for soc in self.send_list.values():
+            for soc in self.connected_clients.values():
                 soc.send(in_data)
 
         # Return these values for the audio input object
@@ -199,6 +200,7 @@ class VoiceCall:
         """
         # Create a socket object to receive the incoming audio
         my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        my_socket.settimeout(5)
 
         # Try to connect to the client to receive from
         try:
@@ -207,15 +209,17 @@ class VoiceCall:
             # Remove the client if there was problem connecting to them
             self._remove_client(ip)
         else:
-            try:
-                while True:
+
+            while True:
+                try:
                     # Receive the audio data from the client
                     data = my_socket.recv(self.CHUNK)
+                except socket.error:
+                    # Remove the client if there was problem communicating with them
+                    self._remove_client(ip)
+                else:
                     # Play the audio in the audio output
                     self.audio_output.write(data)
-            except Exception as e:
-                # Remove the client if there was problem communicating with them
-                self._remove_client(ip)
 
     def send_audio_stream(self):
         """
@@ -231,14 +235,18 @@ class VoiceCall:
             ip = address[0]
 
             if ip in self.call_members.keys():
-                self.send_list[ip] = user_soc
+                self.connected_clients[ip] = user_soc
             else:
                 self._remove_client(ip)
 
     def toggle_mute(self):
+        """
+        Mutes or unmutes the user's microphone
+        :return: -
+        """
         self.muted = not self.muted
 
-    def main(self):
+    def handle_server_messages(self):
         """
         Handles the incoming updates (User joined the call, call ended…)
         :return:
@@ -261,7 +269,7 @@ class VoiceCall:
                     # Assign each ip to a username in the call_members dict
                     for username, ip in zip(usernames, ips):
                         self.call_members[ip] = username
-                        self.receive_audio_stream(ip)
+                        threading.Thread(target=self.receive_audio_stream, args=(ip,)).start()
 
                 # If a user joined the voice call
                 elif server_message['opname'] == 'voice_user_joined':
@@ -279,11 +287,12 @@ class VoiceCall:
         :param ip: The client's ip address
         :return: -
         """
-        if ip in self.send_list.keys():
-            # Close the user's socket
-            self.send_list[ip].close()
+        if ip in self.connected_clients.keys():
+            soc = self.connected_clients[ip]
             # Remove the user from the send list
-            del self.send_list[ip]
+            del self.connected_clients[ip]
+            # Close the user's socket
+            soc.close()
 
         if ip in self.call_members.keys():
             # Remove the user from the call members
@@ -321,12 +330,12 @@ class VideoCall(VoiceCall):
 
         # The camera handler object
         self.camera = CameraHandler()
-        # A dict of usernames and queues for each user's video
+        # A dict of usernames and queues for each user's video to display
         self.videos_out = videos_out
 
-        # A dict for storing the queues of the audio frames and the usernames
+        # A dict for storing the queues of the audio frames for each username
         self.audios_queues = {}
-        # A dict for storing the queues of the video frames and the usernames
+        # A dict for storing the queues of the video frames for each username
         self.videos_queues = {}
         # A lock for synchronizing access to the audio and video queues
         self.queue_lock = threading.Lock()
@@ -363,12 +372,13 @@ class VideoCall(VoiceCall):
 
     def receive_audio_stream(self, ip):
         """
-                Receive the audio stream from a client
-                :param ip: The ip to receive the audio from
-                :return:
-                """
+        Receive the audio stream from a client
+        :param ip: The ip to receive the audio from
+        :return:
+        """
         # Create a socket object to receive the incoming audio
         my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        my_socket.settimeout(5)
         # Get the client's username
         client_username = self.call_members[ip]
 
@@ -514,7 +524,7 @@ class VideoCall(VoiceCall):
                         # Assign the ip to the username in the call members dict
                         self.call_members[ip] = username
                         # Start receiving audio from the user
-                        self.receive_audio_stream(ip)
+                        threading.Thread(target=self.receive_audio_stream, args=(ip,)).start()
 
                 # If a user joined the video call
                 elif server_message['opname'] == 'voice_user_joined' or server_message['opname'] == 'video_user_joined':

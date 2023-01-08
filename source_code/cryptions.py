@@ -66,7 +66,7 @@ class AESCipher:
 
         # Encrypt the data
         encryptor = cipher.encryptor()
-        padded_data = self.pad(data, self.BLOCK_SIZE)
+        padded_data = self._pad(data, self.BLOCK_SIZE)
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
         # Return the IV and ciphertext as a single message
@@ -91,12 +91,12 @@ class AESCipher:
         padded_data = decrypter.update(cipher_data) + decrypter.finalize()
 
         # Remove padding
-        decrypted = self.unpad(padded_data, self.BLOCK_SIZE)
+        decrypted = self._unpad(padded_data, self.BLOCK_SIZE)
 
         return decrypted
 
     @staticmethod
-    def pad(data: bytes, block_size: int) -> bytes:
+    def _pad(data: bytes, block_size: int) -> bytes:
         """
         Pads the data to the specified block size
         :param data: The data to pad
@@ -110,7 +110,7 @@ class AESCipher:
         return padded_data
 
     @staticmethod
-    def unpad(padded_data: bytes, block_size: int) -> bytes:
+    def _unpad(padded_data: bytes, block_size: int) -> bytes:
         """
         Unpads the data
         :param padded_data: The padded data
@@ -125,4 +125,18 @@ class AESCipher:
 
     @staticmethod
     def generate_key():
+        """
+        Generates a random 32 bytes combination
+        :return: A random 32 bytes combination
+        """
         return os.urandom(32)
+
+
+if __name__ == '__main__':
+    # Test aes
+    aes = AESCipher()
+    raw = 'doron'
+    key = AESCipher.generate_key()
+    enc = aes.encrypt(raw.encode(), key)
+    dec = aes.decrypt(enc, key).decode()
+    assert dec == raw
