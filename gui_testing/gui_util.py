@@ -35,7 +35,7 @@ class PanelsSwitcher(wx.BoxSizer):
 
 
 class UserBox(wx.BoxSizer):
-    def __init__(self, parent, username='', status='', pic='strife_logo.png'):
+    def __init__(self, parent, username='NoUser', status='No status', pic='strife_logo.png', align_right=False):
         super(UserBox, self).__init__(wx.HORIZONTAL)
         self.RELATIVE_PIC_SIZE = 0.04
 
@@ -43,13 +43,6 @@ class UserBox(wx.BoxSizer):
         self.username = username
         self.status = status
         self.pic = pic
-
-        # Add user profile picture
-        pic = wx.Image(self.pic, wx.BITMAP_TYPE_ANY)\
-            .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
-        bitmap = wx.Bitmap(pic)
-        static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
-        self.Add(static_pic, 0, wx.ALIGN_CENTER)
 
         # Add vertical sizer that contains the username and status
         self.vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -62,23 +55,46 @@ class UserBox(wx.BoxSizer):
         status_text = wx.StaticText(self.parent, label=self.status)
         self.vsizer.Add(status_text, 1, wx.EXPAND)
 
-        # Add the vertical sizer to the sizer
-        self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
+        if align_right:
+            # Add the vertical sizer to the sizer
+            self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
+
+            # Add user profile picture
+            pic = wx.Image(self.pic, wx.BITMAP_TYPE_ANY)\
+                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+            bitmap = wx.Bitmap(pic)
+            static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
+            self.Add(static_pic, 0, wx.ALIGN_CENTER)
+
+        else:
+            # Add user profile picture
+            pic = wx.Image(self.pic, wx.BITMAP_TYPE_ANY)\
+                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+            bitmap = wx.Bitmap(pic)
+            static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
+            self.Add(static_pic, 0, wx.ALIGN_CENTER)
+
+            # Add the vertical sizer to the sizer
+            self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
 
 
 class UsersScrollPanel(ScrolledPanel):
-    def __init__(self, parent):
+    def __init__(self, parent, align_right=False):
         super(UsersScrollPanel, self).__init__(parent, style=wx.SIMPLE_BORDER, size=(300, 1080))
         self.SetupScrolling()
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.users = []
+        self.align_right = align_right
 
         self.SetSizer(self.sizer)
 
     def add_user(self, username, status, picture_path):
-        user_box = UserBox(self, username, status, picture_path)
+        user_box = UserBox(self, username, status, picture_path, self.align_right)
         self.users.append(user_box)
-        self.sizer.Add(user_box)
+        if self.align_right:
+            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT)
+        else:
+            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT)
 
     def remove_user(self, username):
         index = -1

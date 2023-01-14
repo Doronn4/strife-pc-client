@@ -73,7 +73,7 @@ class MainFrame(wx.Frame):
         # Widgets
         self.friends_panel = gui_util.UsersScrollPanel(self)
         self.chat_panel = ChatPanel(self)
-        self.chat_members_panel = gui_util.UsersScrollPanel(self)
+        self.chat_members_panel = gui_util.UsersScrollPanel(self, True)
 
         # Add all widgets to the sizer
         self.bottom_sizer.Add(self.friends_panel, 1, wx.EXPAND)
