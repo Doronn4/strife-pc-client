@@ -1,24 +1,7 @@
 import wx
 from login_gui import LoginFrame
 from main_gui import MainFrame
-
-
-class MyPanel(wx.Panel):
-    def __init__(self, parent):
-        super(MyPanel, self).__init__(parent)
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        # hbox = wx.BoxSizer(wx.HORIZONTAL)
-
-
-class MyFrame(wx.Frame):
-    def __init__(self, parent, title):
-        self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
-        size = wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE
-
-        super(MyFrame, self).__init__(parent, title=title)
-
-        self.panel = MyPanel(self)
+from gui_util import LoginEvent, EVT_LOGIN_BINDER
 
 
 class StrifeApp(wx.App):
@@ -26,16 +9,31 @@ class StrifeApp(wx.App):
     main_frame: MainFrame
 
     def OnInit(self):
-        #self.login_frame = LoginFrame(parent=None, title='Login to Strife')
-        #self.login_frame.Show()
+        self.login_frame = LoginFrame(parent=None, title='Login to Strife', app=self)
+        self.Bind(EVT_LOGIN_BINDER, self.onLoginAttempt)
+        self.login_frame.Show()
         self.main_frame = MainFrame(parent=None, title='Strife')
-        self.main_frame.Show()
 
         return True
+
+    def onLoginAttempt(self, event):
+        print(event)
+        username, password = event.username, event.password
+        print('login attempt with', username, password)
+        # Add logic
+        self.login_frame.Close()
+        self.main_frame.Show()
 
 
 if __name__ == '__main__':
     app = StrifeApp()
+    # For testing
     for i in range(20):
-        app.main_frame.friends_panel.add_user(f'doron{i}', 'hello world', 'robot.png')
+        app.main_frame.friends_panel.add_user(f'DORON{i}', 'hello world', 'robot.png')
+
+    for i in range(6):
+        app.main_frame.chat_members_panel.add_user(f'itamar{i}', 'sup', 'robot.png')
+
     app.MainLoop()
+
+

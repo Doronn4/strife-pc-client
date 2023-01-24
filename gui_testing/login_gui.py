@@ -1,5 +1,5 @@
 import wx
-from gui_util import PanelsSwitcher
+from gui_util import PanelsSwitcher, LoginEvent, EVT_LOGIN_BINDER, EVT_LOGIN
 
 
 class RegisterPanel(wx.Panel):
@@ -246,11 +246,13 @@ class LoginFrame(wx.Frame):
     """
     The login window for the strife system (Logging in and registering)
     """
-    def __init__(self, parent, title):
+
+    def __init__(self, parent, title, app):
         self.RELATIVE_SIZE = 0.5  # The relative size of the window to the screen
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE
         super(LoginFrame, self).__init__(parent, title=title, size=size)
 
+        self.app = app
         self.login_panel = LoginPanel(self, self.onLogin, self.toRegister)
         self.register_panel = RegisterPanel(self, self.onRegister, self.toLogin)
 
@@ -275,12 +277,11 @@ class LoginFrame(wx.Frame):
                 pass
 
         # Pass the username and password to the main program...
-
-        # Get if the username and password are correct
-        valid = True  # Temp
-        if valid:
-            # Pass onto the main screen
-            pass
+        if not error_str:
+            login_event = LoginEvent(EVT_LOGIN, self.GetId())
+            login_event.set_credentials(username, password)
+            # Send the event
+            wx.PostEvent(self.app, login_event)
 
     def toRegister(self, event):
         self.panel_switcher.Show(self.register_panel)
