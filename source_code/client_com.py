@@ -4,9 +4,12 @@ import queue
 
 
 class ClientCom:
+    """
+    Represents a TCP based communication class
+    """
 
     def __init__(self, server_port: int, server_ip: str, message_queue: queue.Queue):
-        self.CHUNK_SIZE = 4096
+        self.CHUNK_SIZE = 1024
         self.server_port = server_port
         self.server_ip = server_ip
         self.message_queue = message_queue
@@ -14,6 +17,7 @@ class ClientCom:
 
         self.CONNECTION_EXCEPTION = Exception('Connection to server failed')
         self.NOT_RUNNING_EXCEPTION = Exception('Not running')
+        self.INVALID_TYPE_EXCEPTION = Exception('Invalid data type')
 
         # Try to connect to the server
         try:
@@ -37,8 +41,11 @@ class ClientCom:
             raise self.NOT_RUNNING_EXCEPTION
 
         # Encode the data if needed
-        if type(data) != bytes:
-            data = data.encode()
+        if type(data) == bytes:
+            try:
+                data = data.encode()
+            except Exception:
+                raise self.INVALID_TYPE_EXCEPTION
 
         # Send the data
         self.socket.send(data)

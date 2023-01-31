@@ -54,7 +54,7 @@ class PanelsSwitcher(wx.BoxSizer):
 
 
 class UserBox(wx.BoxSizer):
-    def __init__(self, parent, username='NoUser', status='No status', pic='strife_logo.png', align_right=False):
+    def __init__(self, parent, username='NoUser', status='No status', pic='graphics/strife_logo.png', align_right=False):
         super(UserBox, self).__init__(wx.HORIZONTAL)
         self.RELATIVE_PIC_SIZE = 0.04
 
@@ -189,7 +189,7 @@ class SettingsDialog(wx.Dialog):
 
 
 class CallUserPanel(wx.Panel):
-    def __init__(self, parent, username, picture='robot.png'):
+    def __init__(self, parent, username, picture='graphics/robot.png'):
         super(CallUserPanel, self).__init__(parent)
         self.username = username
         self.picture = wx.Image(picture, wx.BITMAP_TYPE_ANY)
@@ -240,8 +240,8 @@ class VoiceCallWindow(wx.Frame):
         self.SetWindowStyleFlag(wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MINIMIZE_BOX
                                 ^ wx.MAXIMIZE_BOX ^ wx.SYSTEM_MENU ^ wx.CLOSE_BOX)
 
-        self.MUTE_BUTTON_IMAGE = wx.Image("mute.png", wx.BITMAP_TYPE_ANY)
-        self.LEAVE_BUTTON_IMAGE = wx.Image("leave.png", wx.BITMAP_TYPE_ANY)
+        self.MUTE_BUTTON_IMAGE = wx.Image("graphics/mute.png", wx.BITMAP_TYPE_ANY)
+        self.LEAVE_BUTTON_IMAGE = wx.Image("graphics/leave.png", wx.BITMAP_TYPE_ANY)
 
         self.RELATIVE_BUTTON_SIZE = 0.1
 

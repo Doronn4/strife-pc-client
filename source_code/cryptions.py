@@ -1,3 +1,4 @@
+from cryptography.hazmat.primitives.asymmetric import rsa as CrypRSA
 import rsa
 import os
 from cryptography.hazmat.primitives import padding
@@ -9,6 +10,7 @@ class RSACipher:
     """
     A class for encrypting and decrypting data in RSA
     """
+    KEY_SIZE = 1024
 
     def __init__(self, private_key):
         """
@@ -40,6 +42,12 @@ class RSACipher:
         """
         decrypted = self.RSA.decrypt(data, self.private_key)
         return decrypted
+
+    @staticmethod
+    def generate_keys():
+        public_key, private_key = rsa.newkeys(RSACipher.KEY_SIZE)
+
+        return public_key, private_key
 
 
 class AESCipher:
@@ -135,8 +143,22 @@ class AESCipher:
 if __name__ == '__main__':
     # Test aes
     aes = AESCipher()
-    raw = 'doron'
+    raw = 'ahdraokrlp\n'*20
+    print(raw)
     key = AESCipher.generate_key()
     enc = aes.encrypt(raw.encode(), key)
+    print('enc', len(enc))
+    print('raw', len(raw.encode()))
+    print('diff ', str(len(enc) - len(raw.encode())))
     dec = aes.decrypt(enc, key).decode()
     assert dec == raw
+
+    # TESt rsa
+    pub_key, priv_key = RSACipher.generate_keys()
+    my_rsa = RSACipher(priv_key)
+    raw = 'hello i am doron!'
+    enc = my_rsa.encrypt(raw, pub_key)
+    #print(enc)
+    dec = my_rsa.decrypt(enc).decode()
+    #print(dec)
+    assert raw == dec

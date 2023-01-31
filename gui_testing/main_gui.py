@@ -9,11 +9,11 @@ class ChatPanel(wx.Panel):
 
 class MainFrame(wx.Frame):
     def __init__(self, parent, title):
-        self.STRIFE_LOGO_IMAGE = wx.Image("strife_logo.png", wx.BITMAP_TYPE_ANY)
-        self.VOICE_BUTTON_IMAGE = wx.Image("voice.png", wx.BITMAP_TYPE_ANY)
-        self.VIDEO_BUTTON_IMAGE = wx.Image("video.png", wx.BITMAP_TYPE_ANY)
-        self.LOGOUT_BUTTON_IMAGE = wx.Image("logout.png", wx.BITMAP_TYPE_ANY)
-        self.SETTINGS_BUTTON_IMAGE = wx.Image("settings.png", wx.BITMAP_TYPE_ANY)
+        self.STRIFE_LOGO_IMAGE = wx.Image("graphics/strife_logo.png", wx.BITMAP_TYPE_ANY)
+        self.VOICE_BUTTON_IMAGE = wx.Image("graphics/voice.png", wx.BITMAP_TYPE_ANY)
+        self.VIDEO_BUTTON_IMAGE = wx.Image("graphics/video.png", wx.BITMAP_TYPE_ANY)
+        self.LOGOUT_BUTTON_IMAGE = wx.Image("graphics/logout.png", wx.BITMAP_TYPE_ANY)
+        self.SETTINGS_BUTTON_IMAGE = wx.Image("graphics/settings.png", wx.BITMAP_TYPE_ANY)
 
         self.RELATIVE_BUTTON_SIZE = 0.04
         self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
@@ -101,6 +101,7 @@ class MainFrame(wx.Frame):
         # TODO: handle logic etc....
 
         title = 'ifath fans'  # temp
+
         self.voice_call_window = gui_util.VoiceCallWindow(self, title)
 
         # temp

@@ -24,7 +24,7 @@ class RegisterPanel(wx.Panel):
         # A default text color
         self.TEXT_COLOR = wx.Colour(237, 99, 99)
         # The strife logo image
-        self.STRIFE_IMAGE = wx.Image("strife_logo.png", wx.BITMAP_TYPE_ANY)
+        self.STRIFE_IMAGE = wx.Image("graphics/strife_logo.png", wx.BITMAP_TYPE_ANY)
         # The relative size of the image compared to the size of the window
         self.RELATIVE_LOGO_SIZE = 0.15
 
@@ -144,7 +144,7 @@ class LoginPanel(wx.Panel):
         self.RELATIVE_SIZE = 0.5  # The relative size of the window to the screen
         self.BACKGROUND_COLOR = wx.Colour(0, 53, 69)
         self.TEXT_COLOR = wx.Colour(237, 99, 99)
-        self.STRIFE_IMAGE = wx.Image("strife_logo.png", wx.BITMAP_TYPE_ANY)
+        self.STRIFE_IMAGE = wx.Image("graphics/strife_logo.png", wx.BITMAP_TYPE_ANY)
         self.RELATIVE_LOGO_SIZE = 0.15  # The size of the logo relative to the size of the window
 
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE

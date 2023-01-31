@@ -29,10 +29,10 @@ if __name__ == '__main__':
     app = StrifeApp()
     # For testing
     for i in range(20):
-        app.main_frame.friends_panel.add_user(f'DORON{i}', 'hello world', 'robot.png')
+        app.main_frame.friends_panel.add_user(f'DORON{i}', 'hello world', 'graphics/robot.png')
 
     for i in range(6):
-        app.main_frame.chat_members_panel.add_user(f'itamar{i}', 'sup', 'robot.png')
+        app.main_frame.chat_members_panel.add_user(f'itamar{i}', 'sup', 'graphics/robot.png')
 
     app.MainLoop()
 
