@@ -18,10 +18,10 @@ class KeysManager:
 
     def save_keys(self, password: str):
         contents = ''
-        for chat_id, key in self.chats_keys:
+        for chat_id, key in self.chats_keys.items():
             contents += f'{chat_id}:{key}\n'
 
-        encrypted = self.aes.encrypt(contents.encode(), password.encode())
+        encrypted = self.aes.encrypt(contents.encode(), password.zfill(32).encode())
         with open(self.path, 'wb') as f:
             f.write(encrypted)
 
@@ -32,9 +32,12 @@ class KeysManager:
             encrypted_contents = f.read()
 
         if encrypted_contents:
-            contents = self.aes.decrypt(encrypted_contents, password.encode()).decode()
+            contents = self.aes.decrypt(encrypted_contents, password.zfill(32).encode()).decode()
 
-        return contents
+        for line in contents.splitlines():
+            if len(line.split(':', 1)) == 2:
+                chat_id, key = line.split(':', 1)
+                self.chats_keys[int(chat_id)] = key
 
     def get_chat_key(self, chat_id) -> bytes:
         if len(self.chats_keys) == 0:
@@ -50,3 +53,15 @@ class KeysManager:
 
     def _generate_keys(self):
         self.public_key, self.private_key = rsa.newkeys(RSACipher.KEY_SIZE)
+
+
+if __name__ == '__main__':
+    manager = KeysManager("G:\\TESTING\\keys\\keys.json")
+    # manager.chats_keys[69] = os.urandom(32)
+    # print(manager.chats_keys[69])
+    # manager.save_keys('doron1234')
+    manager.load_keys('doron1234')
+    print(manager.get_chat_key(69))
+
+
+
