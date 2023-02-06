@@ -1,1 +1,2 @@
-source_code/__pycache__/*
+.idea/*
+code/gui/__pycache__/*
