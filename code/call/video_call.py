@@ -3,12 +3,12 @@ import threading
 import time
 import cv2
 import numpy
-
+from code.core.cryptions import AESCipher
 from code.handlers.camera_handler import CameraHandler
 
 
 class VideoCall:
-    def __init__(self, chat_id: int):
+    def __init__(self, chat_id: int, key: bytes):
         """
         Creates a new VideoCall object to handle the video call
         :param chat_id: The chat id of the call
@@ -30,6 +30,9 @@ class VideoCall:
         # A dict of the call members' ips as the keys, and the video frames received from them as the values
         self.ips_videos = {}
 
+        self.aes = AESCipher()
+        self.key = key
+
         # Creates a UDP socket
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.PORT))
@@ -39,9 +42,11 @@ class VideoCall:
             frame = self.camera.read()
             # Compress the frame to jpg format
             ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
+            # Encrypt the data using the call's symmetrical key
+            data = self.aes.encrypt(buffer.tobytes(), self.key)
             # Send the image to all of the users in the call
             for ip in self.ips_videos.keys():
-                self.socket.sendto(buffer.tobytes(), (ip, self.PORT))
+                self.socket.sendto(data, (ip, self.PORT))
             # Sleep 1/FPS of a second to send only the desired frame rate
             time.sleep((1/self.FPS))
 
@@ -49,6 +54,10 @@ class VideoCall:
         while self.active:
             # Receive the frame
             data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+
+            # Decrypt the data using the call's symmetrical key
+            data = self.aes.decrypt(data, self.key)
+
             # Get the ip of the sender
             ip = addr[0]
             # Convert the buffer received to an image

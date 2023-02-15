@@ -21,16 +21,19 @@ class MainFrame(wx.Frame):
 
         super(MainFrame, self).__init__(parent, title=title, size=size)
 
+        self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
+
         # Sub windows
         self.settings_window = gui_util.SettingsDialog(self)
         self.voice_call_window = None  # temp ******
+        self.video_call_window = None   # temp ******
         # TODO: Add all the windows....
 
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.top_bar_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # My user profile box
-        self.my_user_box = gui_util.UserBox(self)
+        self.my_user_box = gui_util.UserBox(self, gui_util.User())
 
         # Voice call button
         image_bitmap = self.VOICE_BUTTON_IMAGE.Scale(
@@ -38,7 +41,7 @@ class MainFrame(wx.Frame):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.voice_call_button = wx.BitmapButton(self, bitmap=image_bitmap)
         # TODO: put a label or id for the button
-        # Bind the settings button to it's function
+        # Bind the voice call button to it's function
         self.voice_call_button.Bind(wx.EVT_BUTTON, self.onVoice)
 
         # Video call button
@@ -47,7 +50,8 @@ class MainFrame(wx.Frame):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.video_call_button = wx.BitmapButton(self, bitmap=image_bitmap)
         # TODO: put a label or id for the button
-        # TODO: bind to a function
+        # Bind the video call button to it's function
+        self.video_call_button.Bind(wx.EVT_BUTTON, self.onVideo)
 
         # Logout button
         image_bitmap = self.LOGOUT_BUTTON_IMAGE.Scale(
@@ -102,16 +106,29 @@ class MainFrame(wx.Frame):
 
         title = 'ifath fans'  # temp
 
-        self.voice_call_window = gui_util.VoiceCallWindow(self, title)
+        self.voice_call_window = gui_util.CallWindow(self, title)
 
         # temp
         for i in range(4):
-            self.voice_call_window.call_grid.add_user('doron'+str(i))
+            self.voice_call_window.call_grid.add_user(gui_util.User('doron'+str(i)))
         # ----
-
         self.voice_call_window.Show()
+
+    def onVideo(self, event):
+        # TODO: handle logic etc....
+
+        title = 'ifath fans'  # temp
+
+        self.video_call_window = gui_util.CallWindow(self, title, video=True)
+
+        # temp
+        for i in range(4):
+            self.video_call_window.call_grid.add_user(gui_util.User('doron'+str(i)))
+        # ----
+        self.video_call_window.Show()
 
     def onLogout(self, event):
         # Handle logging out logic
         pass
+
 

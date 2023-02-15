@@ -1,3 +1,5 @@
+import time
+
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
@@ -54,32 +56,32 @@ class PanelsSwitcher(wx.BoxSizer):
 
 
 class UserBox(wx.BoxSizer):
-    def __init__(self, parent, username='NoUser', status='No status', pic='assets/strife_logo.png', align_right=False):
+    def __init__(self, parent, user, align_right=False):
         super(UserBox, self).__init__(wx.HORIZONTAL)
         self.RELATIVE_PIC_SIZE = 0.04
 
         self.parent = parent
-        self.username = username
-        self.status = status
-        self.pic = pic
+        self.user = user
 
         # Add vertical sizer that contains the username and status
         self.vsizer = wx.BoxSizer(wx.VERTICAL)
 
         # Add the username to it
-        username_text = wx.StaticText(self.parent, label=self.username)
+        username_text = wx.StaticText(self.parent, label=self.user.username)
         self.vsizer.Add(username_text, 1, wx.EXPAND)
 
         # Add the status
-        status_text = wx.StaticText(self.parent, label=self.status)
+        status_text = wx.StaticText(self.parent, label=self.user.status)
         self.vsizer.Add(status_text, 1, wx.EXPAND)
 
         if align_right:
             # Add the vertical sizer to the sizer
             self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
 
+            self.AddSpacer(10)
+
             # Add user profile picture
-            pic = wx.Image(self.pic, wx.BITMAP_TYPE_ANY)\
+            pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
             static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
@@ -87,11 +89,13 @@ class UserBox(wx.BoxSizer):
 
         else:
             # Add user profile picture
-            pic = wx.Image(self.pic, wx.BITMAP_TYPE_ANY)\
+            pic = self.user.pic\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
             static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
             self.Add(static_pic, 0, wx.ALIGN_CENTER)
+
+            self.AddSpacer(10)
 
             # Add the vertical sizer to the sizer
             self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
@@ -107,8 +111,8 @@ class UsersScrollPanel(ScrolledPanel):
 
         self.SetSizer(self.sizer)
 
-    def add_user(self, username, status, picture_path):
-        user_box = UserBox(self, username, status, picture_path, self.align_right)
+    def add_user(self, user):
+        user_box = UserBox(self, user, self.align_right)
         self.users.append(user_box)
         if self.align_right:
             self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT)
@@ -189,59 +193,82 @@ class SettingsDialog(wx.Dialog):
 
 
 class CallUserPanel(wx.Panel):
-    def __init__(self, parent, username, picture='assets/robot.png'):
+    def __init__(self, parent, user, fps=30):
         super(CallUserPanel, self).__init__(parent)
-        self.username = username
-        self.picture = wx.Image(picture, wx.BITMAP_TYPE_ANY)
-        self.RELATIVE_SIZE = 0.2
 
-        # Convert the image to bitmap
-        scaled_image = self.picture.Rescale(parent.GetSize()[0]*self.RELATIVE_SIZE,
-                                            parent.GetSize()[0]*self.RELATIVE_SIZE)
-        bitmap = wx.Bitmap(scaled_image)
-        # Convert the bitmap to a static bitmap
-        self.static_bitmap = wx.StaticBitmap(self, bitmap=bitmap)
+        # Make the timer stop when the panel is destroyed
+        self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
+
+        self.user = user
+        self.RELATIVE_SIZE = 0.2
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+
+        # # Convert the image to bitmap
+        # scaled_image = self.user.pic.Rescale(parent.GetSize()[0]*self.RELATIVE_SIZE,
+        #                                      parent.GetSize()[0]*self.RELATIVE_SIZE)
+        # bitmap = wx.Bitmap(scaled_image)
+        # # Convert the bitmap to a static bitmap
+        # self.static_bitmap = wx.StaticBitmap(self, bitmap=bitmap)
+        self.bmp = self.user.get_frame()
+        self.bmp: wx.Bitmap
 
         # Text
-        self.label = wx.StaticText(self, label=username)
+        self.label = wx.StaticText(self, label=self.user.username)
         # Set the font, size and color of the label
         label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
-        #self.label.SetForegroundColour(self.TEXT_COLOR)
+
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000.0 / fps)
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_TIMER, self.NextFrame)
+
+    def OnPaint(self, evt):
+        dc = wx.BufferedPaintDC(self, style=wx.BUFFER_VIRTUAL_AREA)
+        dc.DrawBitmap(self.bmp, 0, 0)
+
+    def NextFrame(self, event):
+        frame = self.user.get_frame()
+        if type(frame) == wx.Bitmap:
+            self.bmp = frame
+        else:
+            self.bmp.CopyFromBuffer(frame)
+        wx.Bitmap.Rescale(self.bmp, self.GetSize())
+        self.Refresh()
 
 
 class CallGrid(wx.GridSizer):
     def __init__(self, parent):
-        self.GAP = 3
+        self.GAP = 10
         self.BORDER_WIDTH = 10
 
         super(CallGrid, self).__init__(MAX_PARTICIPANTS/2, MAX_PARTICIPANTS/2, self.GAP)
-        self.users = []
+        self.users_panels = []
         self.parent = parent
 
-    def add_user(self, username, picture=None):
-        if picture:
-            self.users.append(CallUserPanel(self.parent, username, picture))
-        else:
-            self.users.append(CallUserPanel(self.parent, username))
-
-        self.Add(self.users[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
+    def add_user(self, user):
+        self.users_panels.append(CallUserPanel(self.parent, user))
+        self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
 
     def remove_user(self, username):
-        for user in self.users:
-            if user.username == username:
-                self.users.remove(user)
+        for panel in self.users_panels:
+            if panel.user.username == username:
+                self.users_panels.remove(panel)
                 break
 
 
-class VoiceCallWindow(wx.Frame):
-    def __init__(self, parent, title):
-        super(VoiceCallWindow, self).__init__(parent, name=title)
+class CallWindow(wx.Frame):
+    def __init__(self, parent, title, video=False):
+        super(CallWindow, self).__init__(parent, name=title)
         self.SetWindowStyleFlag(wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MINIMIZE_BOX
                                 ^ wx.MAXIMIZE_BOX ^ wx.SYSTEM_MENU ^ wx.CLOSE_BOX)
 
         self.MUTE_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
+        self.MUTED_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
         self.LEAVE_BUTTON_IMAGE = wx.Image("assets/leave.png", wx.BITMAP_TYPE_ANY)
+        self.CAMERA_ON_IMAGE = wx.Image("assets/turn_off_camera.png", wx.BITMAP_TYPE_ANY)
+        self.CAMERA_OFF_IMAGE = wx.Image("assets/turn_on_camera.png", wx.BITMAP_TYPE_ANY)
 
         self.RELATIVE_BUTTON_SIZE = 0.1
 
@@ -271,10 +298,17 @@ class VoiceCallWindow(wx.Frame):
         self.leave_call_button = wx.BitmapButton(self, bitmap=bit)
         self.leave_call_button.Bind(wx.EVT_BUTTON, self.onHangup)
 
+        bit = self.CAMERA_ON_IMAGE.Scale(
+            wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
+            wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
+        self.camera_button = wx.BitmapButton(self, bitmap=bit)
+        self.camera_button.Bind(wx.EVT_BUTTON, self.onCameraToggle)
+
         self.toolbar.Add(self.mute_button, 1, wx.ALIGN_CENTER)
         self.toolbar.Add(self.leave_call_button, 1, wx.ALIGN_CENTER)
+        self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
-        self.sizer.Add(self.call_grid, 3, wx.ALIGN_CENTER)
+        self.sizer.Add(self.call_grid, 3, wx.EXPAND)
         self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
 
         self.SetSizer(self.sizer)
@@ -287,7 +321,31 @@ class VoiceCallWindow(wx.Frame):
         # TODO: handle logic stuff
         self.Close()
 
-        
+    def onCameraToggle(self, event):
+        # TODO: handle camera, change icon
+        pass
+
+
+class User:
+    def __init__(self, username='NoUser', status='No status', pic='assets/strife_logo.png'):
+        self.username = username
+        self.status = status
+        self.pic = wx.Image(pic, wx.BITMAP_TYPE_ANY)
+        self.video_frame = None
+        self.last_update = 0
+        self.MAX_TIMEOUT = 3
+
+    def update_video(self, frame):
+        self.video_frame = frame
+        self.last_update = time.time()
+
+    def get_frame(self):
+        frame = self.video_frame
+        if frame is None or time.time() - self.last_update > self.MAX_TIMEOUT:
+            frame = self.pic.ConvertToBitmap()
+
+        return frame
+
 
 
 

@@ -253,6 +253,8 @@ class LoginFrame(wx.Frame):
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE
         super(LoginFrame, self).__init__(parent, title=title, size=size)
 
+        self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
+
         self.app = app
         self.login_panel = LoginPanel(self, self.onLogin, self.toRegister)
         self.register_panel = RegisterPanel(self, self.onRegister, self.toLogin)
