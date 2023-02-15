@@ -1,5 +1,7 @@
 import queue
 import socket
+import threading
+
 import pyaudio
 
 from code.core.cryptions import AESCipher
@@ -26,7 +28,7 @@ class VoiceCall:
         # Whether the mic is muted
         self.muted = False
 
-        # A dict of the current call members ips as the keys
+        # A dict of the current call members ips as the keys and their output streams as the values
         self.call_members = {}
 
         # Constants for the audio info
@@ -43,9 +45,17 @@ class VoiceCall:
         self.aes = AESCipher()
         self.key = key
 
+        threading.Thread(target=self._main).start()
+
+    def _main(self):
         # Creates a UDP socket
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.PORT))
+
+        # TODO: add users...
+
+        threading.Thread(target=self.receive_audio).start()
+        threading.Thread(target=self.send_audio).start()
 
     def send_audio(self):
         while True:

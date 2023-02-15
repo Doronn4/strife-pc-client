@@ -3,33 +3,41 @@ import os
 
 
 class FileHandler:
-    def __init__(self, base_path):
-        self.base_path = base_path
-        self.PFPS_PATH = '/profiles'
+    PFPS_PATH = '/profiles'
+    base_path = ''
 
-    def save_file(self, contents: bytes, path, file_name: str):
+    @staticmethod
+    def initialize(base_path):
+        FileHandler.base_path = base_path
+
+    @staticmethod
+    def save_file(contents: bytes, path, file_name: str):
         with open(f'{path}\\{file_name}', 'wb') as f:
             f.write(contents)
 
-    def save_pfp(self, contents: bytes, username: str):
-        with open(f'{self.base_path}{self.PFPS_PATH}/{username}.png', 'wb') as f:
+    @staticmethod
+    def save_pfp(contents: bytes, username: str):
+        with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}/{username}.png', 'wb') as f:
             f.write(contents)
 
-    def load_pfp(self, username: str):
-        with open(f'{self.base_path}{self.PFPS_PATH}/{username}.png', 'rb') as f:
+    @staticmethod
+    def load_pfp(username: str):
+        with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}/{username}.png', 'rb') as f:
             picture = f.read()
         return picture
 
-    def load_file(self, path) -> bytes:
+    @staticmethod
+    def load_file(path) -> bytes:
         data = b''
         with open(path, 'rb') as f:
             data = f.read()
         return data
 
-    def get_pfps_info(self):
+    @staticmethod
+    def get_pfps_info():
         infos = []
         # specify the directory path
-        path = f'{self.base_path}{self.PFPS_PATH}'
+        path = f'{FileHandler.base_path}{FileHandler.PFPS_PATH}'
 
         # use the listdir method from os module to get a list of filenames
         filenames = os.listdir(path)
