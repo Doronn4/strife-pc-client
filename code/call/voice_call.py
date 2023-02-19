@@ -1,9 +1,7 @@
 import queue
 import socket
 import threading
-
 import pyaudio
-
 from code.core.cryptions import AESCipher
 
 
@@ -78,4 +76,5 @@ class VoiceCall:
             self.call_members[ip].write(data)
 
     def add_user(self, ip):
-        self.call_members[ip] = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,output=True, frames_per_buffer=self.CHUNK)
+        self.call_members[ip] = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, output=True,
+                                                frames_per_buffer=self.CHUNK)

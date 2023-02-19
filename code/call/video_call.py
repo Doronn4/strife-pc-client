@@ -29,6 +29,8 @@ class VideoCall:
         self.active = False
         # A dict of the call members' ips as the keys, and the video frames received from them as the values
         self.ips_videos = {}
+        # Whether to send video or not
+        self.transmit_video = True
 
         self.aes = AESCipher()
         self.key = key
@@ -39,16 +41,18 @@ class VideoCall:
 
     def send_video(self):
         while self.active:
-            frame = self.camera.read()
-            # Compress the frame to jpg format
-            ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
-            # Encrypt the data using the call's symmetrical key
-            data = self.aes.encrypt(buffer.tobytes(), self.key)
-            # Send the image to all of the users in the call
-            for ip in self.ips_videos.keys():
-                self.socket.sendto(data, (ip, self.PORT))
-            # Sleep 1/FPS of a second to send only the desired frame rate
-            time.sleep((1/self.FPS))
+            # Send video only if the flag is on
+            if self.transmit_video:
+                frame = self.camera.read()
+                # Compress the frame to jpg format
+                ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
+                # Encrypt the data using the call's symmetrical key
+                data = self.aes.encrypt(buffer.tobytes(), self.key)
+                # Send the image to all of the users in the call
+                for ip in self.ips_videos.keys():
+                    self.socket.sendto(data, (ip, self.PORT))
+                # Sleep 1/FPS of a second to send only the desired frame rate
+                time.sleep((1/self.FPS))
 
     def receive_videos(self):
         while self.active:
@@ -65,6 +69,9 @@ class VideoCall:
             frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
             # Put the image/frame in the ips-videos dict
             self.ips_videos[ip] = frame
+
+    def toggle_video(self):
+        self.transmit_video = not self.transmit_video
 
     def start(self):
         self.active = True
