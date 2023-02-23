@@ -91,10 +91,7 @@ class Protocol:
         opcode = Protocol.general_opcodes['register']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{password}"
-        # The the message size
-        size = len(msg)
-        # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def sign_in(username, password):
@@ -102,10 +99,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['sign_in']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{password}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def add_friend(username):
@@ -113,24 +108,17 @@ class Protocol:
         opcode = Protocol.general_opcodes['add_friend']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
-    def create_group(group_name, group_members):
+    def create_group(group_name):
         # Get the opcode of create_group
         opcode = Protocol.general_opcodes['create_group']
         # Construct the message
-        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{group_name}{Protocol.FIELD_SEPARATOR}"
-        # Add all the members as a list to the message
-        for member in group_members:
-            msg += Protocol.LIST_SEPARATOR + member
-        # The the message size
-        size = len(msg)
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{group_name}"
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def start_voice(group_id):
@@ -138,10 +126,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['start_voice']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{group_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def start_video(group_id):
@@ -149,10 +135,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['start_video']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{group_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def change_username(new_username):
@@ -160,10 +144,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['change_username']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{new_username}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def change_pfp(picture):
@@ -171,10 +153,8 @@ class Protocol:
         kind = Protocol.files_opcodes['profile_pic_change']
         # Construct the message
         msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(picture)}{Protocol.FIELD_SEPARATOR}{picture}"
-        # The the message size
-        size = len(msg) - len(picture)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def change_status(new_status):
@@ -182,10 +162,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['change_status']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{new_status}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def change_password(old_password, new_password):
@@ -193,10 +171,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['change_password']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{old_password}{Protocol.FIELD_SEPARATOR}{new_password}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def get_chat_history(chat_id):
@@ -204,10 +180,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['get_chat_history']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def request_file(chat_id, file_hash):
@@ -215,10 +189,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_file']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{file_hash}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def remove_friend(username):
@@ -226,10 +198,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['remove_friend']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def join_voice(chat_id):
@@ -237,10 +207,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['join_voice']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def join_video(chat_id):
@@ -248,21 +216,17 @@ class Protocol:
         opcode = Protocol.general_opcodes['join_video']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
-    def add_member_to_group(chat_id, username):
+    def add_member_to_group(chat_id, username, group_key):
         # Get the opcode of add_member_to_group
         opcode = Protocol.general_opcodes['add_member_to_group']
         # Construct the message
-        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{username}"
-        # The the message size
-        size = len(msg)
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{group_key} "
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def request_group_members(chat_id):
@@ -270,10 +234,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_group_members']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def request_user_pfp(username):
@@ -281,10 +243,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_user_pfp']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def request_user_status(username):
@@ -292,10 +252,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_user_status']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def request_chats():
@@ -303,10 +261,8 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_chats']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def send_message(sender_username, chat_id, message):
@@ -314,10 +270,8 @@ class Protocol:
         kind = Protocol.chat_opcodes['send_message']
         # Construct the message
         msg = f"{kind}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message}"
-        # The the message size
-        size = len(msg)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def send_image(chat_id, image_name, image):
@@ -327,10 +281,8 @@ class Protocol:
         # Construct the message
         msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(image)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
             f"{Protocol.FIELD_SEPARATOR}{image_name}{Protocol.FIELD_SEPARATOR}{image} "
-        # The the message size
-        size = len(msg) - len(image)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def send_file(chat_id, file_name, file):
@@ -340,10 +292,8 @@ class Protocol:
         # Construct the message
         msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(file)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
             f"{Protocol.FIELD_SEPARATOR}{file_name}{Protocol.FIELD_SEPARATOR}{file} "
-        # The the message size
-        size = len(msg) - len(file)
         # Return the message after protocol
-        return f'{str(size).zfill(2)}{msg}'
+        return msg
 
     @staticmethod
     def unprotocol_msg(type: str, raw_message):
@@ -354,6 +304,7 @@ class Protocol:
         :return: A dict with every parameter name as the key and it's value as the value
         """
         # Split the message into it's fields with the field separator
+        print(raw_message)
         values = raw_message.split(Protocol.FIELD_SEPARATOR)
 
         # Get the opcode of the message
@@ -405,4 +356,9 @@ class Protocol:
                 else:
                     ret[param_name] = value
         return ret
+
+
+if __name__ == '__main__':
+    msg = Protocol.register('doron', '12323k')
+    print(msg)
 

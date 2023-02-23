@@ -1,5 +1,6 @@
-from cryptography.hazmat.primitives.asymmetric import rsa as CrypRSA
-import rsa
+from Cryptodome.PublicKey import RSA
+from Cryptodome.Cipher import PKCS1_v1_5
+from base64 import b64encode, b64decode
 import os
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -12,13 +13,15 @@ class RSACipher:
     """
     KEY_SIZE = 1024
 
-    def __init__(self, private_key):
+    def __init__(self):
         """
         Creates an ASYM object for encryption and decryption
         :param private_key: The private key to use for decrypting messages
         """
-        self.private_key = private_key
-        self.RSA = rsa
+        # self.public_key, self.private_key = self.generate_keys()
+        # self.public_key: rsa.PublicKey
+        self.RSA_key = RSA.generate(1024)
+        self.RSA_cipher = PKCS1_v1_5.new(self.RSA_key)
 
     def encrypt(self, data, public_key):
         """
@@ -27,12 +30,15 @@ class RSACipher:
         :param public_key: The public key
         :return: The encrypted data
         """
-        if type(data) == bytes:
-            encrypted = self.RSA.encrypt(data, public_key)
-        else:
-            encrypted = self.RSA.encrypt(data.encode(), public_key)
+        if type(data) == str:
+            data = data.encode()
 
-        return encrypted
+        data = b64encode(data)
+        imported_key = RSA.import_key(public_key)
+        # Encrypting data
+        rsa_encryption_cipher = PKCS1_v1_5.new(imported_key)
+        ciphertext = rsa_encryption_cipher.encrypt(data)
+        return b64encode(ciphertext)
 
     def decrypt(self, data):
         """
@@ -40,14 +46,15 @@ class RSACipher:
         :param data: The data to decrypt
         :return: The decrypted data
         """
-        decrypted = self.RSA.decrypt(data, self.private_key)
-        return decrypted
+        data = b64decode(data)
+        data = self.RSA_cipher.decrypt(data, 16)
+        return b64decode(data)
 
-    @staticmethod
-    def generate_keys():
-        public_key, private_key = rsa.newkeys(RSACipher.KEY_SIZE)
+    def get_string_public_key(self):
+        return self.RSA_key.publickey().exportKey()
 
-        return public_key, private_key
+    def get_public_key_from_string(self, key):
+        return RSA.import_key(key)
 
 
 class AESCipher:
@@ -141,24 +148,23 @@ class AESCipher:
 
 
 if __name__ == '__main__':
-    # Test aes
-    aes = AESCipher()
-    raw = 'ahdraokrlp\n'*20
-    print(raw)
-    key = AESCipher.generate_key()
-    print(len(key))
-    enc = aes.encrypt(raw.encode(), key)
-    print('enc', len(enc))
-    print('raw', len(raw.encode()))
-    print('diff ', str(len(enc) - len(raw.encode())))
-    dec = aes.decrypt(enc, key).decode()
-    assert dec == raw
+    # # Test aes
+    # aes = AESCipher()
+    # raw = 'ahdraokrlp\n'*20
+    # print(raw)
+    # key = AESCipher.generate_key()
+    # print(len(key))
+    # enc = aes.encrypt(raw.encode(), key)
+    # print('enc', len(enc))
+    # print('raw', len(raw.encode()))
+    # print('diff ', str(len(enc) - len(raw.encode())))
+    # dec = aes.decrypt(enc, key).decode()
+    # assert dec == raw
 
     # TESt rsa
-    pub_key, priv_key = RSACipher.generate_keys()
-    my_rsa = RSACipher(priv_key)
+    my_rsa = RSACipher()
     raw = 'hello i am doron!'
-    enc = my_rsa.encrypt(raw, pub_key)
+    enc = my_rsa.encrypt(raw, my_rsa.get_string_public_key())
     #print(enc)
     dec = my_rsa.decrypt(enc).decode()
     #print(dec)

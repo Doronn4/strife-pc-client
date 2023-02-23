@@ -1,6 +1,7 @@
 import socket
 import threading
 import queue
+from code.core.cryptions import RSACipher
 
 
 class ClientCom:
@@ -15,17 +16,14 @@ class ClientCom:
         self.message_queue = message_queue
         self.socket = socket.socket()
 
+        self.server_key = None
+        self.rsa = RSACipher()
+
         self.CONNECTION_EXCEPTION = Exception('Connection to server failed')
         self.NOT_RUNNING_EXCEPTION = Exception('Not running')
         self.INVALID_TYPE_EXCEPTION = Exception('Invalid data type')
 
-        # Try to connect to the server
-        try:
-            self.socket.connect((self.server_ip, self.server_port))
-        except Exception:
-            raise self.CONNECTION_EXCEPTION
-
-        self.running = True
+        self.running = False
         # Start the main thread
         self.main_thread = threading.Thread(target=self._main_loop)
         self.main_thread.start()
@@ -47,8 +45,14 @@ class ClientCom:
             except Exception:
                 raise self.INVALID_TYPE_EXCEPTION
 
-        # Send the data
-        self.socket.send(data)
+        try:
+            enc_data = self.rsa.encrypt(data, self.server_key)
+            # send data length
+            self.socket.send(str(len(enc_data)).zfill(4).encode())
+            # Send the data
+            self.socket.send(enc_data)
+        except Exception:
+            raise self.CONNECTION_EXCEPTION
 
     def recv_large(self, size: int):
         """
@@ -86,13 +90,31 @@ class ClientCom:
         The main loop which receives data from the server and puts it in a queue
         :return: -
         """
+
+        # Try to connect to the server
+        try:
+            self.socket.connect((self.server_ip, self.server_port))
+        except Exception:
+            raise self.CONNECTION_EXCEPTION
+
+        # Change keys with server
+        try:
+            key = self.socket.recv(1024).decode()
+            self.server_key = key
+            self.socket.send(self.rsa.get_string_public_key())
+
+        except Exception as e:
+            raise self.CONNECTION_EXCEPTION
+
+        self.running = True
+
         # Run while the client_com object is running
         while self.running:
             try:
                 # Receive the size of the data and convert it to an int
-                size = int(self.socket.recv(2).decode())
+                size = int(self.socket.recv(4).decode())
                 # Receive the data
-                data = self.socket.recv(size).decode()
+                data = self.socket.recv(size)
             # Invalid size exception
             except ValueError:
                 print('invalid size')
@@ -102,8 +124,9 @@ class ClientCom:
                 print('socket error')
                 self.running = False
             else:
+                dec_data = self.rsa.decrypt(data)
                 # Put the received data inside the message queue
-                self.message_queue.put(data)
+                self.message_queue.put(dec_data.decode())
     
     def close(self):
         pass
