@@ -13,7 +13,7 @@ class StrifeApp(wx.App):
     main_frame: MainFrame
 
     def OnInit(self):
-        my_app_id = r'doron.strife.pc.1'  # arbitrary string
+        my_app_id = r'doron.strife.pc.1'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
 
         self.login_frame = LoginFrame(parent=None, title='Login to Strife', app=self)

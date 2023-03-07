@@ -267,7 +267,7 @@ class Protocol:
     @staticmethod
     def send_message(sender_username, chat_id, message):
         # Get the opcode of send_message
-        kind = Protocol.chat_opcodes['send_message']
+        kind = Protocol.chat_opcodes['text_message']
         # Construct the message
         msg = f"{kind}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message}"
         # Return the message after protocol
@@ -359,6 +359,6 @@ class Protocol:
 
 
 if __name__ == '__main__':
-    msg = Protocol.register('doron', '12323k')
-    print(msg)
+    message = Protocol.register('doron', '12323k')
+    print(message)
 

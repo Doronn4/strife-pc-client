@@ -1,6 +1,5 @@
 from Cryptodome.PublicKey import RSA
 from Cryptodome.Cipher import PKCS1_v1_5
-from base64 import b64encode, b64decode
 import os
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -11,16 +10,13 @@ class RSACipher:
     """
     A class for encrypting and decrypting data in RSA
     """
-    KEY_SIZE = 1024
+    KEY_SIZE = 1024*2
 
     def __init__(self):
         """
         Creates an ASYM object for encryption and decryption
-        :param private_key: The private key to use for decrypting messages
         """
-        # self.public_key, self.private_key = self.generate_keys()
-        # self.public_key: rsa.PublicKey
-        self.RSA_key = RSA.generate(1024)
+        self.RSA_key = RSA.generate(RSACipher.KEY_SIZE)
         self.RSA_cipher = PKCS1_v1_5.new(self.RSA_key)
 
     def encrypt(self, data, public_key):
@@ -33,12 +29,11 @@ class RSACipher:
         if type(data) == str:
             data = data.encode()
 
-        data = b64encode(data)
         imported_key = RSA.import_key(public_key)
         # Encrypting data
         rsa_encryption_cipher = PKCS1_v1_5.new(imported_key)
-        ciphertext = rsa_encryption_cipher.encrypt(data)
-        return b64encode(ciphertext)
+        cipherbytes = rsa_encryption_cipher.encrypt(data)
+        return cipherbytes
 
     def decrypt(self, data):
         """
@@ -46,14 +41,19 @@ class RSACipher:
         :param data: The data to decrypt
         :return: The decrypted data
         """
-        data = b64decode(data)
-        data = self.RSA_cipher.decrypt(data, 16)
-        return b64decode(data)
+        data = self.RSA_cipher.decrypt(data, None, 0)
+        return data
 
-    def get_string_public_key(self):
-        return self.RSA_key.publickey().exportKey()
+    def get_string_public_key(self) -> str:
+        """
+        Returns a string representation using PEM encoding for the server's public key
+        """
+        return self.RSA_key.publickey().exportKey().decode()
 
     def get_public_key_from_string(self, key):
+        """
+        Returns a public key from a PEM encoded string
+        """
         return RSA.import_key(key)
 
 

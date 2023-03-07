@@ -1,3 +1,4 @@
+import base64
 import socket
 import threading
 import queue
@@ -49,6 +50,7 @@ class ClientCom:
             enc_data = self.rsa.encrypt(data, self.server_key)
             # send data length
             self.socket.send(str(len(enc_data)).zfill(4).encode())
+            print(len(enc_data), 'size check')
             # Send the data
             self.socket.send(enc_data)
         except Exception:
@@ -101,7 +103,7 @@ class ClientCom:
         try:
             key = self.socket.recv(1024).decode()
             self.server_key = key
-            self.socket.send(self.rsa.get_string_public_key())
+            self.socket.send(self.rsa.get_string_public_key().encode())
 
         except Exception as e:
             raise self.CONNECTION_EXCEPTION
@@ -129,4 +131,5 @@ class ClientCom:
                 self.message_queue.put(dec_data.decode())
     
     def close(self):
-        pass
+        self.running = False
+        self.socket = None
