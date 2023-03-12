@@ -1,6 +1,8 @@
+import threading
 import time
 
 import wx
+from typing import List
 from wx.lib.scrolledpanel import ScrolledPanel
 
 
@@ -55,69 +57,25 @@ class PanelsSwitcher(wx.BoxSizer):
         self.parent.Layout()
 
 
-class UserBox(wx.BoxSizer):
-    def __init__(self, parent, user, align_right=False):
-        super(UserBox, self).__init__(wx.HORIZONTAL)
-        self.RELATIVE_PIC_SIZE = 0.04
-
-        self.parent = parent
-        self.user = user
-
-        # Add vertical sizer that contains the username and status
-        self.vsizer = wx.BoxSizer(wx.VERTICAL)
-
-        # Add the username to it
-        username_text = wx.StaticText(self.parent, label=self.user.username)
-        self.vsizer.Add(username_text, 1, wx.EXPAND)
-
-        # Add the status
-        status_text = wx.StaticText(self.parent, label=self.user.status)
-        self.vsizer.Add(status_text, 1, wx.EXPAND)
-
-        if align_right:
-            # Add the vertical sizer to the sizer
-            self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
-
-            self.AddSpacer(10)
-
-            # Add user profile picture
-            pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
-                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
-            bitmap = wx.Bitmap(pic)
-            static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
-            self.Add(static_pic, 0, wx.ALIGN_CENTER)
-
-        else:
-            # Add user profile picture
-            pic = self.user.pic\
-                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
-            bitmap = wx.Bitmap(pic)
-            static_pic = wx.StaticBitmap(self.parent, bitmap=bitmap)
-            self.Add(static_pic, 0, wx.ALIGN_CENTER)
-
-            self.AddSpacer(10)
-
-            # Add the vertical sizer to the sizer
-            self.Add(self.vsizer, 0, wx.ALIGN_CENTER)
-
-
 class UsersScrollPanel(ScrolledPanel):
-    def __init__(self, parent, align_right=False):
+
+    def __init__(self, parent, align_right=False, on_click=None):
         super(UsersScrollPanel, self).__init__(parent, style=wx.SIMPLE_BORDER, size=(300, 1080))
         self.SetupScrolling()
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.users = []
         self.align_right = align_right
+        self.on_click = on_click
 
         self.SetSizer(self.sizer)
 
     def add_user(self, user):
-        user_box = UserBox(self, user, self.align_right)
+        user_box = UserBox(self, user, self.align_right, onClick=self.handle_click)
         self.users.append(user_box)
         if self.align_right:
-            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT)
+            self.sizer.Add(user_box, 0, wx.EXPAND)
         else:
-            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT)
+            self.sizer.Add(user_box, 0, wx.EXPAND)
 
     def remove_user(self, username):
         index = -1
@@ -128,6 +86,18 @@ class UsersScrollPanel(ScrolledPanel):
 
         if index != -1:
             self.sizer.Remove(index)
+
+    def handle_click(self, chat_id):
+        for userbox in self.users:
+            print(userbox)
+            if userbox.user.chat_id == chat_id:
+                userbox.SetBackgroundColour(wx.Colour(192, 192, 192))
+                userbox.Refresh()
+            else:
+                userbox.SetBackgroundColour(wx.NullColour)
+                userbox.Refresh()
+
+        self.on_click(chat_id)
 
 
 class SettingsDialog(wx.Dialog):
@@ -327,13 +297,14 @@ class CallWindow(wx.Frame):
 
 
 class User:
-    def __init__(self, username='NoUser', status='No status', pic='assets/strife_logo.png'):
+    def __init__(self, username='NoUser', status='', pic='assets/strife_logo.png', chat_id=-1):
         self.username = username
         self.status = status
         self.pic = wx.Image(pic, wx.BITMAP_TYPE_ANY)
         self.video_frame = None
         self.last_update = 0
         self.MAX_TIMEOUT = 3
+        self.chat_id = chat_id
 
     def update_video(self, frame):
         self.video_frame = frame
@@ -345,6 +316,195 @@ class User:
             frame = self.pic.ConvertToBitmap()
 
         return frame
+
+
+class UserBox(wx.Panel):
+    def __init__(self, parent, user: User, align_right=False, onClick=None):
+        super(UserBox, self).__init__(parent)
+        self.RELATIVE_PIC_SIZE = 0.04
+
+        self.parent = parent
+        self.user = user
+
+        self.onClick = onClick
+
+        self.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.sizer)
+
+        # Add vertical sizer that contains the username and status
+        self.vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Add the username to it
+        username_text = wx.StaticText(self, label=self.user.username)
+        username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+        self.vsizer.Add(username_text, 1, wx.EXPAND)
+
+        # Add the status
+        status_text = wx.StaticText(self, label=self.user.status)
+        status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+        self.vsizer.Add(status_text, 1, wx.EXPAND)
+
+        if align_right:
+            # Add the vertical sizer to the sizer
+            self.sizer.Add(self.vsizer, 0, wx.ALIGN_CENTER)
+
+            self.sizer.AddSpacer(10)
+
+            # Add user profile picture
+            pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
+                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+            bitmap = wx.Bitmap(pic)
+            static_pic = wx.StaticBitmap(self, bitmap=bitmap)
+            static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+            self.sizer.Add(static_pic, 0, wx.ALIGN_CENTER)
+
+        else:
+            # Add user profile picture
+            pic = self.user.pic\
+                .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+            bitmap = wx.Bitmap(pic)
+            static_pic = wx.StaticBitmap(self, bitmap=bitmap)
+            static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+            self.sizer.Add(static_pic, 0, wx.ALIGN_CENTER)
+
+            self.sizer.AddSpacer(10)
+
+            # Add the vertical sizer to the sizer
+            self.sizer.Add(self.vsizer, 0, wx.ALIGN_CENTER)
+
+    def handle_click(self, event):
+        if self.onClick:
+            self.onClick(self.user.chat_id)
+
+
+class ChatPanel(ScrolledPanel):
+    def __init__(self, parent):
+        super(ChatPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
+        self.MESSAGES_GAP = 10
+        self.SetupScrolling()
+
+        self.SetBackgroundColour(wx.Colour(138, 136, 136))
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.SetSizer(self.sizer)
+
+    def add_text_message(self, sender: User, message: str):
+        """
+        Adds a text message panel to the chat, aligns the message to the left if the sender is not the current user,
+        or to the right if it is.
+        :param sender: User object representing the sender of the message
+        :type sender: User
+        :param message: Text message to be displayed
+        :type message: str
+        :return: None
+        """
+        # Create a new ChatMessage panel with the sender box and message
+        is_current_user = False  # TEMP
+        chat_message = ChatMessage(self, sender, message, align_right=is_current_user)
+
+        # Add the ChatMessage panel to the ChatPanel sizer
+        self.sizer.Add(chat_message, 0, wx.EXPAND, border=5)
+        self.sizer.AddSpacer(self.MESSAGES_GAP)
+        self.Layout()
+
+
+class ChatMessage(wx.Panel):
+    """
+    A panel for displaying a chat message- The user box alongside the text message split into lines
+    """
+    def __init__(self, parent, user: User, message: str, align_right=False):
+        super(ChatMessage, self).__init__(parent)
+
+        self.GAP = 20
+        self.SetBackgroundColour(wx.Colour(130, 181, 131))
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        user_box = UserBox(self, user, align_right=align_right)
+
+        # Add the user box to the left of the ChatMessage panel if the message is not from the current user
+        if not align_right:
+            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
+
+        # Create a wx.StaticText widget with the message and add it to the ChatMessage panel
+        message_label = wx.StaticText(self, label=message)
+
+        if align_right:
+            # Add the message sizer to the ChatMessage panel
+            self.sizer.Add(message_label, 0, wx.ALIGN_RIGHT)
+        else:
+            self.sizer.AddSpacer(self.GAP)
+            # Add the message sizer to the ChatMessage panel
+            self.sizer.Add(message_label, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+
+        # Add the user box to the right of the ChatMessage panel if the message is from the current user
+        if align_right:
+            self.sizer.AddSpacer(self.GAP)
+            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
+
+        self.SetSizer(self.sizer)
+        self.Layout()
+
+
+class GroupsSwitcher(wx.BoxSizer):
+    def __init__(self, parent):
+        # Initialize the base class
+        wx.BoxSizer.__init__(self)
+        # Attach this sizer to the parent window
+        parent.SetSizer(self)
+        # Save the parent windows
+        self.parent = parent
+        # A dict of all the groups panels where the key is the group id
+        self.groups_panels = {}
+        self.groups = {}
+
+    def add_group(self, group_id, users: List[User]):
+        group_panel = wx.Panel(self.parent)
+
+        group_members = UsersScrollPanel(group_panel)
+        group_chat = ChatPanel(group_panel)
+
+        self.groups[group_id] = (group_chat, group_members)
+
+        for user in users:
+            group_members.add_user(user)
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(group_chat, 3, wx.EXPAND)
+        sizer.Add(group_members, 1, wx.EXPAND)
+        group_panel.SetSizer(sizer)
+
+        self.Add(group_panel, 1, wx.EXPAND)
+        group_panel.Hide()
+
+        self.groups_panels[group_id] = group_panel
+
+    def Show(self, chat_id):
+        # For each panel in the list of panels
+        for id_, group_panel in self.groups_panels.items():
+            # Show the given panel
+            if id_ == chat_id:
+                print('showing')
+                group_panel.Show()
+            else:
+                # and hide the rest
+                group_panel.Hide()
+        # Rearrange the window
+        self.parent.Layout()
+
+
+class GroupsPanel(wx.Panel):
+    def __init__(self, parent):
+        super(GroupsPanel, self).__init__(parent)
+        self.parent = parent
+
+        self.sizer = GroupsSwitcher(self)
+
+
+
+
+
 
 
 

@@ -2,11 +2,6 @@ import wx
 import gui_util
 
 
-class ChatPanel(wx.Panel):
-    def __init__(self, parent):
-        super(ChatPanel, self).__init__(parent)
-
-
 class MainFrame(wx.Frame):
     def __init__(self, parent, title):
         self.STRIFE_LOGO_IMAGE = wx.Image("assets/strife_logo.png", wx.BITMAP_TYPE_ANY)
@@ -82,19 +77,21 @@ class MainFrame(wx.Frame):
         # Sizer of the bottom widgets
         self.bottom_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # Widgets
-        self.friends_panel = gui_util.UsersScrollPanel(self)
-        self.chat_panel = ChatPanel(self)
-        self.chat_members_panel = gui_util.UsersScrollPanel(self)
+        self.friends_panel = gui_util.UsersScrollPanel(self, on_click=self.onChatSelect)
+        self.groups_panel = gui_util.GroupsPanel(self)
 
         # Add all widgets to the sizer
         self.bottom_sizer.Add(self.friends_panel, 1, wx.EXPAND)
-        self.bottom_sizer.Add(self.chat_panel, 3, wx.EXPAND)
-        self.bottom_sizer.Add(self.chat_members_panel, 1, wx.EXPAND)
+        self.bottom_sizer.Add(self.groups_panel, 4, wx.EXPAND)
 
         # Add bottom sizer to the frame sizer
         self.frame_sizer.Add(self.bottom_sizer, 5, wx.ALIGN_LEFT)
 
         self.SetSizer(self.frame_sizer)
+
+    def onChatSelect(self, chat_id):
+        print('selected chat', chat_id)
+        self.groups_panel.sizer.Show(chat_id)
 
     def onSettings(self, event):
         if not self.settings_window.IsShown():

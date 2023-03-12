@@ -21,7 +21,7 @@ class MyFrame(wx.Frame):
         self.Refresh()
 
     def run(self):
-        # Your code to receive video frames and decode them
+        # Your src to receive video frames and decode them
         while True:
             frame = receive_frame()
             print(frame)

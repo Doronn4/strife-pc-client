@@ -3,8 +3,8 @@ import threading
 import time
 import cv2
 import numpy
-from code.core.cryptions import AESCipher
-from code.handlers.camera_handler import CameraHandler
+from src.core.cryptions import AESCipher
+from src.handlers.camera_handler import CameraHandler
 
 
 class VideoCall:

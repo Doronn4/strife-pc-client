@@ -2,7 +2,7 @@ import base64
 import socket
 import threading
 import queue
-from code.core.cryptions import RSACipher
+from src.core.cryptions import RSACipher
 
 
 class ClientCom:
@@ -50,7 +50,6 @@ class ClientCom:
             enc_data = self.rsa.encrypt(data, self.server_key)
             # send data length
             self.socket.send(str(len(enc_data)).zfill(4).encode())
-            print(len(enc_data), 'size check')
             # Send the data
             self.socket.send(enc_data)
         except Exception:

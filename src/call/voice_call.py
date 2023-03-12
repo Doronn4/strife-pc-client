@@ -2,7 +2,7 @@ import queue
 import socket
 import threading
 import pyaudio
-from code.core.cryptions import AESCipher
+from src.core.cryptions import AESCipher
 
 
 class VoiceCall:

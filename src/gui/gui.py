@@ -6,6 +6,7 @@ from login_gui import LoginFrame
 from main_gui import MainFrame
 from gui_util import LoginEvent, EVT_LOGIN_BINDER
 from gui_util import User
+import wx.lib.inspection as inspect
 
 
 class StrifeApp(wx.App):
@@ -39,11 +40,19 @@ if __name__ == '__main__':
 
     app = StrifeApp()
     # For testing
-    for i in range(20):
-        app.main_frame.friends_panel.add_user(User(f'DORON{i}', 'hello world', 'assets/robot.png'))
+    app.main_frame.friends_panel.add_user(User(f'iftah fans', '', 'assets/robot.png', chat_id=69))
+    app.main_frame.friends_panel.add_user(User(f'da boys', '', 'assets/robot.png', chat_id=420))
 
-    for i in range(6):
-        app.main_frame.chat_members_panel.add_user(User(f'itamar{i}', 'sup', 'assets/robot.png'))
+    itamar = User(f'itamar', 'sup', 'assets/robot.png')
+    gabzo = User(f'gabzo', 'hello there', 'assets/robot.png')
+
+    app.main_frame.groups_panel.sizer.add_group(69, [itamar, itamar, itamar])
+    app.main_frame.groups_panel.sizer.add_group(420, [gabzo, gabzo])
+
+    for i in range(20):
+        app.main_frame.groups_panel.sizer.groups[69][0].add_text_message(itamar, 'hello everyone!'+str(i))
+
+    inspect.InspectionTool().Show()
 
     app.MainLoop()
 

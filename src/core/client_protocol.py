@@ -44,16 +44,16 @@ class Protocol:
         1: 'approve_reject',
         2: 'friend_request',
         3: 'added_to_group',
-        5: 'voice_call_started',
-        6: 'video_call_started',
-        7: 'voice_call_info',
-        8: 'video_call_info',
-        9: 'voice_user_joined',
-        10: 'video_user_joined',
-        11: 'chats_list',
-        12: 'group_members',
-        13: 'user_status',
-        14: 'friend_added'
+        4: 'voice_call_started',
+        5: 'video_call_started',
+        6: 'voice_call_info',
+        7: 'video_call_info',
+        8: 'voice_user_joined',
+        9: 'video_user_joined',
+        10: 'chats_list',
+        11: 'group_members',
+        12: 'user_status',
+        13: 'friend_added'
     }
     s_chat_opcodes = {
         1: 'text_message',
@@ -64,7 +64,7 @@ class Protocol:
         2: 'user_profile_picture'
     }
 
-    # Parameters of every message from the server
+    # Parameters of every message from the server (server -> client)
     s_opcodes_params = {
         'approve_reject': ('is_approved', 'function_opcode'),
         'friend_request': ('sender_username',),
@@ -269,7 +269,7 @@ class Protocol:
         # Get the opcode of send_message
         kind = Protocol.chat_opcodes['text_message']
         # Construct the message
-        msg = f"{kind}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message}"
+        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message} "
         # Return the message after protocol
         return msg
 
@@ -304,7 +304,6 @@ class Protocol:
         :return: A dict with every parameter name as the key and it's value as the value
         """
         # Split the message into it's fields with the field separator
-        print(raw_message)
         values = raw_message.split(Protocol.FIELD_SEPARATOR)
 
         # Get the opcode of the message

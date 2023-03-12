@@ -1,2 +1,1 @@
-keys_path = ''
-files_base_path = ''
+server_ip = '127.0.0.1'
