@@ -1,9 +1,13 @@
 import wx
 import gui_util
+import login_gui
+from src.core.client_protocol import Protocol
+from pubsub import pub
 
 
-class MainFrame(wx.Frame):
-    def __init__(self, parent, title):
+class MainPanel(wx.Panel):
+    def __init__(self, parent):
+        super(MainPanel, self).__init__(parent)
         self.STRIFE_LOGO_IMAGE = wx.Image("assets/strife_logo.png", wx.BITMAP_TYPE_ANY)
         self.VOICE_BUTTON_IMAGE = wx.Image("assets/voice.png", wx.BITMAP_TYPE_ANY)
         self.VIDEO_BUTTON_IMAGE = wx.Image("assets/video.png", wx.BITMAP_TYPE_ANY)
@@ -12,16 +16,14 @@ class MainFrame(wx.Frame):
 
         self.RELATIVE_BUTTON_SIZE = 0.04
         self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
-        size = wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE
 
-        super(MainFrame, self).__init__(parent, title=title, size=size)
-
-        self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
+        self.parent = parent
 
         # Sub windows
         self.settings_window = gui_util.SettingsDialog(self)
         self.voice_call_window = None  # temp ******
-        self.video_call_window = None   # temp ******
+        self.video_call_window = None  # temp ******
+        self.group_creation_window = gui_util.CreateGroupDialog(self)
         # TODO: Add all the windows....
 
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -78,25 +80,82 @@ class MainFrame(wx.Frame):
         self.bottom_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # Widgets
         self.friends_panel = gui_util.UsersScrollPanel(self, on_click=self.onChatSelect)
+        self.friends_panel.SetBackgroundColour(wx.RED)
+
+        self.create_group_button = wx.Button(self, label='Create new group')
+        font = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.create_group_button.SetFont(font)
+        self.create_group_button.Bind(wx.EVT_BUTTON, self.onGroupCreateButton)
+
+        self.left_bar_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.left_bar_sizer.Add(self.friends_panel, 6, wx.EXPAND)
+        self.left_bar_sizer.Add(self.create_group_button, 1, wx.EXPAND)
+
         self.groups_panel = gui_util.GroupsPanel(self)
 
         # Add all widgets to the sizer
-        self.bottom_sizer.Add(self.friends_panel, 1, wx.EXPAND)
+        self.bottom_sizer.Add(self.left_bar_sizer, 1, wx.EXPAND)
         self.bottom_sizer.Add(self.groups_panel, 4, wx.EXPAND)
 
         # Add bottom sizer to the frame sizer
-        self.frame_sizer.Add(self.bottom_sizer, 5, wx.ALIGN_LEFT)
+        self.frame_sizer.Add(self.bottom_sizer, 5, wx.EXPAND)
 
         self.SetSizer(self.frame_sizer)
 
-    def onChatSelect(self, chat_id):
-        print('selected chat', chat_id)
+        pub.subscribe(self.onGroupJoin, 'added_to_group')
+
+    def onChatSelect(self, chat_id: int):
+        """
+        Called when the user clicks on a chat from the list of chats and shows the selected chat
+        :param chat_id: The id of the chat
+        :type chat_id: int
+        :return: -
+        :rtype: -
+        """
         self.groups_panel.sizer.Show(chat_id)
 
     def onSettings(self, event):
+        """
+        Called when the user opens the settings menu and shows it
+        :param event: The wx event
+        :type event: wx.Event
+        :return: -
+        :rtype: -
+        """
         if not self.settings_window.IsShown():
             self.settings_window = gui_util.SettingsDialog(self)
             self.settings_window.Show()
+
+    def check_group_name(self, name) -> str:
+        pass
+
+    def onGroupJoin(self, group_name, chat_id):
+        self.friends_panel.add_user(gui_util.User(username=group_name, pic='assets/group_pic.png', chat_id=chat_id))
+        self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
+
+    def onGroupCreateButton(self, event):
+        """
+        Called when the user presses the group creation button,
+        creates a new group with the selected group name (if not canceled)
+        :param event: The wx event
+        :type event: wx.Event
+        :return: -
+        :rtype: -
+        """
+        # Check if the window is already shown
+        if not self.group_creation_window.IsShown():
+            # Create a new dialog
+            self.group_creation_window = gui_util.CreateGroupDialog(self)
+            # Get the return value of the dialog
+            val = self.group_creation_window.ShowModal()
+            # If the dialog wasn't canceled
+            if val == wx.ID_OK:
+                # Get the chosen group name
+                group_name = self.group_creation_window.group_name
+                # Construct a message to create a new group
+                msg = Protocol.create_group(group_name)
+                # Send the message to the server
+                self.parent.general_com.send_data(msg)
 
     def onVoice(self, event):
         # TODO: handle logic etc....
@@ -129,3 +188,22 @@ class MainFrame(wx.Frame):
         pass
 
 
+class MainFrame(wx.Frame):
+    def __init__(self, parent, title, general_com, chats_com, files_com):
+        self.RELATIVE_BUTTON_SIZE = 0.04
+        self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
+        size = wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE
+
+        super(MainFrame, self).__init__(parent, title=title, size=size)
+
+        self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
+
+        self.general_com = general_com
+        self.chats_com = chats_com
+        self.files_com = files_com
+
+        self.login_panel = login_gui.LoginPanel(self)
+        self.register_panel = login_gui.RegisterPanel(self)
+        self.main_panel = MainPanel(self)
+
+        self.panel_switcher = gui_util.PanelsSwitcher(self, [self.login_panel, self.register_panel, self.main_panel])

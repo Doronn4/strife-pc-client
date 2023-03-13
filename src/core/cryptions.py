@@ -41,7 +41,7 @@ class RSACipher:
         :param data: The data to decrypt
         :return: The decrypted data
         """
-        data = self.RSA_cipher.decrypt(data, None, 0)
+        data = self.RSA_cipher.decrypt(data, None)
         return data
 
     def get_string_public_key(self) -> str:

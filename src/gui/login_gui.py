@@ -1,24 +1,21 @@
 import os
 
+import gui_util
+from src.core.client_protocol import Protocol
 import wx
-from gui_util import PanelsSwitcher, LoginEvent, EVT_LOGIN_BINDER, EVT_LOGIN
+from gui_util import PanelsSwitcher
+from pubsub import pub
 
 
 class RegisterPanel(wx.Panel):
     """
     The register panel (Used for registering to the Strife system)
     """
-    def __init__(self, parent, onRegister, toLogin):
+    def __init__(self, parent):
         """
         Creates a new register panel
         :param parent: The parent of the panel
-        :param onRegister: The function to call when the user pressed the 'register' button
-        :param toLogin: The function to move to the login window (panel)
         """
-        # The function to move to the login window (panel)
-        self.toLogin = toLogin
-        # The function to call when the user pressed the 'register' button
-        self.onRegister = onRegister
         # The relative size of the window to the screen
         self.RELATIVE_SIZE = 0.5
         # The background color of the panel
@@ -34,6 +31,7 @@ class RegisterPanel(wx.Panel):
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE
         # Call to super init method
         super(RegisterPanel, self).__init__(parent, size=size)
+        self.parent = parent
         # Set background color
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
         # Create the sizer of the panel
@@ -134,14 +132,52 @@ class RegisterPanel(wx.Panel):
         # Set the sizer of the window
         self.SetSizer(self.sizer)
 
+        pub.subscribe(self.onRegisterAnswer, 'register')
+
+    def onRegisterAnswer(self, is_valid):
+        if is_valid:
+            self.parent.panel_switcher.Show(self.parent.login_panel)
+        else:
+            wx.MessageBox('Username already taken', 'Error', wx.OK | wx.ICON_ERROR)
+
+    def onRegister(self, event):
+        error_str = ''
+        # Get the username and password passed by the user
+        username = self.username_input.GetValue()
+        password = self.password_input.GetValue()
+
+        # Check if username and password are valid (before sending them)
+        error_str = self.check_username(username)
+        if error_str:
+            # Pop up dialog with the error string
+            pass
+
+        else:
+            error_str = self.check_password(username)
+            if error_str:
+                # Pop up dialog with the error string
+                pass
+
+        # Pass the username and password to the main program...
+        if not error_str:
+            msg = Protocol.register(username, password)
+            self.parent.general_com.send_data(msg)
+
+    def toLogin(self, event):
+        self.parent.panel_switcher.Show(self.parent.login_panel)
+
+    def check_password(self, password: str) -> str:
+        pass
+
+    def check_username(self, username: str) -> str:
+        pass
+
 
 class LoginPanel(wx.Panel):
     """
     The login panel (Used for logging in to the Strife system)
     """
-    def __init__(self, parent, onLogin, toRegister):
-        self.toRegister = toRegister
-        self.onLogin = onLogin
+    def __init__(self, parent):
         self.RELATIVE_SIZE = 0.5  # The relative size of the window to the screen
         self.BACKGROUND_COLOR = wx.Colour(0, 53, 69)
         self.TEXT_COLOR = wx.Colour(237, 99, 99)
@@ -151,6 +187,8 @@ class LoginPanel(wx.Panel):
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE
 
         super(LoginPanel, self).__init__(parent, size=size)
+
+        self.parent = parent
 
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
 
@@ -242,6 +280,48 @@ class LoginPanel(wx.Panel):
 
         self.SetSizer(self.sizer)
 
+        pub.subscribe(self.onLoginAnswer, 'login')
+
+    def onLoginAnswer(self, is_valid):
+        if is_valid:
+            self.parent.panel_switcher.Show(self.parent.main_panel)
+        else:
+            gui_util.User.this_user = None
+            wx.MessageBox('Incorrect username or password', 'Error', wx.OK | wx.ICON_ERROR)
+
+    def onLogin(self, event):
+        error_str = ''
+        # Get the username and password passed by the user
+        username = self.username_input.GetValue()
+        password = self.password_input.GetValue()
+
+        # Check if username and password are valid (before sending them)
+        error_str = self.check_username(username)
+        if error_str:
+            # Pop up dialog with the error string
+            pass
+
+        else:
+            error_str = self.check_password(username)
+            if error_str:
+                # Pop up dialog with the error string
+                pass
+
+        # Pass the username and password to the main program...
+        if not error_str:
+            gui_util.User.this_user = gui_util.User(username=username)
+            msg = Protocol.sign_in(username, password)
+            self.parent.general_com.send_data(msg)
+
+    def toRegister(self, event):
+        self.parent.panel_switcher.Show(self.parent.register_panel)
+
+    def check_password(self, password: str) -> str:
+        pass
+
+    def check_username(self, username: str) -> str:
+        pass
+
 
 class LoginFrame(wx.Frame):
     """
@@ -281,10 +361,11 @@ class LoginFrame(wx.Frame):
 
         # Pass the username and password to the main program...
         if not error_str:
-            login_event = LoginEvent(EVT_LOGIN, self.GetId())
-            login_event.set_credentials(username, password)
-            # Send the event
-            wx.PostEvent(self.app, login_event)
+            pass
+            # login_event = LoginEvent(EVT_LOGIN, self.GetId())
+            # login_event.set_credentials(username, password)
+            # # Send the event
+            # wx.PostEvent(self.app, login_event)
 
     def toRegister(self, event):
         self.panel_switcher.Show(self.register_panel)
