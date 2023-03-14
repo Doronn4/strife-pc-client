@@ -79,7 +79,7 @@ class Protocol:
         'group_members': ('chat_ids', 'usernames'),
         'user_status': ('username', 'status'),
         'friend_added': ('friend_username',),
-        'text_message': ('message',),
+        'text_message': ('chat_id', 'sender', 'message'),
         'file_description': ('file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_hash', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents')
@@ -313,27 +313,33 @@ class Protocol:
         # The returned dict
         ret = {}
 
+        params_names = []
+
         # If the message was received in the general messages channel
         if type == 'general':
             # The first value in the dict is the opcode's name (opname)
             opcode_name = Protocol.s_general_opcodes[opcode]
             ret['opname'] = opcode_name
+            # Get the parameters names of the message
+            params_names = Protocol.s_opcodes_params[Protocol.s_general_opcodes[opcode]]
 
         # If the message was received in the chat messages channel
         elif type == 'chat':
             # The first value in the dict is the opcode's name (opname)
             opcode_name = Protocol.s_chat_opcodes[opcode]
             ret['opname'] = opcode_name
+            # Get the parameters names of the message
+            params_names = Protocol.s_opcodes_params[Protocol.s_chat_opcodes[opcode]]
 
         # If the message was received in the files messages channel
         elif type == 'files':
             # The first value in the dict is the opcode's name (opname)
             opcode_name = Protocol.s_files_opcodes[opcode]
             ret['opname'] = opcode_name
+            # Get the parameters names of the message
+            params_names = Protocol.s_opcodes_params[Protocol.s_files_opcodes[opcode]]
 
-        # Get the parameters names of the message
-        params_names = Protocol.s_opcodes_params[Protocol.s_general_opcodes[opcode]]
-
+        print(params_names)
         # Assign a value for each parameter in a dict
         for i in range(len(values)):
             value = values[i]

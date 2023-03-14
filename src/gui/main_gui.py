@@ -3,9 +3,12 @@ import gui_util
 import login_gui
 from src.core.client_protocol import Protocol
 from pubsub import pub
+import wx.lib.mixins.inspection
 
 
 class MainPanel(wx.Panel):
+    known_users = []
+
     def __init__(self, parent):
         super(MainPanel, self).__init__(parent)
         self.STRIFE_LOGO_IMAGE = wx.Image("assets/strife_logo.png", wx.BITMAP_TYPE_ANY)
@@ -24,20 +27,19 @@ class MainPanel(wx.Panel):
         self.voice_call_window = None  # temp ******
         self.video_call_window = None  # temp ******
         self.group_creation_window = gui_util.CreateGroupDialog(self)
-        # TODO: Add all the windows....
+        self.add_friend_window = gui_util.AddFriendDialog(self)
 
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.top_bar_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # My user profile box
-        self.my_user_box = gui_util.UserBox(self, gui_util.User())
+        self.my_user_box = gui_util.UserBox(self, gui_util.User.this_user)
 
         # Voice call button
         image_bitmap = self.VOICE_BUTTON_IMAGE.Scale(
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.voice_call_button = wx.BitmapButton(self, bitmap=image_bitmap)
-        # TODO: put a label or id for the button
         # Bind the voice call button to it's function
         self.voice_call_button.Bind(wx.EVT_BUTTON, self.onVoice)
 
@@ -46,7 +48,6 @@ class MainPanel(wx.Panel):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.video_call_button = wx.BitmapButton(self, bitmap=image_bitmap)
-        # TODO: put a label or id for the button
         # Bind the video call button to it's function
         self.video_call_button.Bind(wx.EVT_BUTTON, self.onVideo)
 
@@ -55,7 +56,6 @@ class MainPanel(wx.Panel):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.logout_button = wx.BitmapButton(self, bitmap=image_bitmap)
-        # TODO: put a label or id for the button
         # TODO: bind to a function
 
         # Settings button
@@ -63,12 +63,15 @@ class MainPanel(wx.Panel):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.settings_button = wx.BitmapButton(self, bitmap=image_bitmap)
-        # TODO: put a label or id for the button
         # Bind the settings button to it's function
         self.settings_button.Bind(wx.EVT_BUTTON, self.onSettings)
 
+        self.add_friend_button = wx.Button(self, label='Add friend')
+        self.add_friend_button.Bind(wx.EVT_BUTTON, self.onAddFriend)
+
         # Add all the widgets in the top bar to the sizer
         self.top_bar_sizer.Add(self.my_user_box, 3, wx.EXPAND)
+        self.top_bar_sizer.Add(self.add_friend_button, 1, wx.EXPAND)
         self.top_bar_sizer.Add(self.voice_call_button, 1, wx.EXPAND)
         self.top_bar_sizer.Add(self.video_call_button, 1, wx.EXPAND)
         self.top_bar_sizer.Add(self.logout_button, 1, wx.EXPAND)
@@ -80,7 +83,6 @@ class MainPanel(wx.Panel):
         self.bottom_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # Widgets
         self.friends_panel = gui_util.UsersScrollPanel(self, on_click=self.onChatSelect)
-        self.friends_panel.SetBackgroundColour(wx.RED)
 
         self.create_group_button = wx.Button(self, label='Create new group')
         font = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -98,11 +100,33 @@ class MainPanel(wx.Panel):
         self.bottom_sizer.Add(self.groups_panel, 4, wx.EXPAND)
 
         # Add bottom sizer to the frame sizer
-        self.frame_sizer.Add(self.bottom_sizer, 5, wx.EXPAND)
+        self.frame_sizer.Add(self.bottom_sizer, 8, wx.EXPAND)
 
         self.SetSizer(self.frame_sizer)
 
         pub.subscribe(self.onGroupJoin, 'added_to_group')
+        pub.subscribe(self.onAddFriendAnswer, 'friend_answer')
+
+    def onAddFriendAnswer(self, is_valid):
+        if not is_valid:
+            wx.MessageBox("Friend's username doesn't exist", 'Error', wx.OK | wx.ICON_ERROR)
+            self.onAddFriend(None)
+
+    def onAddFriend(self, event):
+        # Check if the window is already shown
+        if not self.add_friend_window.IsShown():
+            # Create a new dialog
+            self.add_friend_window = gui_util.AddFriendDialog(self)
+            # Get the return value of the dialog
+            val = self.add_friend_window.ShowModal()
+            # If the dialog wasn't canceled
+            if val == wx.ID_OK:
+                # Get the friend name
+                friend_username = self.add_friend_window.friend_username
+                # Construct a message to add a new friend
+                msg = Protocol.add_friend(friend_username)
+                # Send the message to the server
+                self.parent.general_com.send_data(msg)
 
     def onChatSelect(self, chat_id: int):
         """
@@ -187,6 +211,19 @@ class MainPanel(wx.Panel):
         # Handle logging out logic
         pass
 
+    @staticmethod
+    def get_user_by_name(username):
+        user_found = None
+        for user in MainPanel.known_users:
+            if user.username == username:
+                user_found = user
+                break
+        if not user_found:
+            user_found = gui_util.User(username=username)
+            MainPanel.known_users.append(user_found)
+
+        return user_found
+
 
 class MainFrame(wx.Frame):
     def __init__(self, parent, title, general_com, chats_com, files_com):
@@ -204,6 +241,11 @@ class MainFrame(wx.Frame):
 
         self.login_panel = login_gui.LoginPanel(self)
         self.register_panel = login_gui.RegisterPanel(self)
-        self.main_panel = MainPanel(self)
+        self.main_panel = None
 
-        self.panel_switcher = gui_util.PanelsSwitcher(self, [self.login_panel, self.register_panel, self.main_panel])
+        self.panel_switcher = gui_util.PanelsSwitcher(self, [self.login_panel, self.register_panel])
+
+    def move_to_main(self):
+        self.main_panel = MainPanel(self)
+        self.panel_switcher.add_panel(self.main_panel)
+        self.panel_switcher.Show(self.main_panel)

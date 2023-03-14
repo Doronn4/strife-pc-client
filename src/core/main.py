@@ -10,6 +10,7 @@ import config
 import wx
 from pubsub import pub
 from src.gui.main_gui import MainFrame
+import wx.lib.inspection
 
 
 def handle_register_ans(message):
@@ -29,9 +30,23 @@ def handle_added_to_group(message):
     wx.CallAfter(pub.sendMessage, 'added_to_group', group_name=group_name, chat_id=chat_id)
 
 
+def handle_friend_add_answer(message):
+    is_valid = bool(message['is_approved'])
+    wx.CallAfter(pub.sendMessage, 'friend_answer', is_valid=is_valid)
+
+
+def handle_text_message(message):
+    print('onhandle')
+    sender = message['sender']
+    chat_id = message['chat_id']
+    raw_message = message['message']
+    wx.CallAfter(pub.sendMessage, 'text_message', sender=sender, chat_id=chat_id, raw_message=raw_message)
+
+
 approve_reject_dict = {
     1: handle_register_ans,
-    2: handle_login_ans
+    2: handle_login_ans,
+    3: handle_friend_add_answer
 }
 
 general_dict = {
@@ -47,6 +62,10 @@ general_dict = {
     # 'user_profile_picture': update_user_pic
 }
 
+chats_dict = {
+    'text_message': handle_text_message
+}
+
 
 def handle_general_messages(com, q):
     """
@@ -57,10 +76,10 @@ def handle_general_messages(com, q):
         data = q.get()
         # Un-protocol the message from the server
         message = Protocol.unprotocol_msg("general", data)
-        print(message)
 
         if message['opname'] == 'approve_reject':
-            approve_reject_dict[message['function_opcode']](message)
+            if message['function_opcode'] in approve_reject_dict.keys():
+                approve_reject_dict[message['function_opcode']](message)
 
         # Check if the name of the operation is in the dict of functions
         elif message['opname'] in general_dict.keys():
@@ -69,7 +88,24 @@ def handle_general_messages(com, q):
 
 
 def handle_chats_messages(com, q):
-    pass
+    """
+        Handle chats messages incoming from the server
+        """
+    while True:
+        # Take the data from the queue
+        data = q.get()
+        # Un-protocol the message from the server
+        message = Protocol.unprotocol_msg("chat", data)
+        print(message)
+
+        if message['opname'] == 'approve_reject':
+            if message['function_opcode'] in approve_reject_dict.keys():
+                approve_reject_dict[message['function_opcode']](message)
+
+        # Check if the name of the operation is in the dict of functions
+        elif message['opname'] in chats_dict.keys():
+            # Call the function according to the operation
+            chats_dict[message['opname']](message)
 
 
 def handle_files_messages(com, q):
@@ -101,6 +137,7 @@ def main():
     app = wx.App()
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com, chats_com=chats_com, files_com=files_com)
     main_frame.Show()
+    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
 

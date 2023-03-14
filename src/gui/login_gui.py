@@ -3,7 +3,7 @@ import os
 import gui_util
 from src.core.client_protocol import Protocol
 import wx
-from gui_util import PanelsSwitcher
+from src.gui.gui_util import PanelsSwitcher
 from pubsub import pub
 
 
@@ -284,7 +284,7 @@ class LoginPanel(wx.Panel):
 
     def onLoginAnswer(self, is_valid):
         if is_valid:
-            self.parent.panel_switcher.Show(self.parent.main_panel)
+            self.parent.move_to_main()
         else:
             gui_util.User.this_user = None
             wx.MessageBox('Incorrect username or password', 'Error', wx.OK | wx.ICON_ERROR)

@@ -1,9 +1,11 @@
 import threading
 import time
-
+from src.core.client_protocol import Protocol
 import wx
 from typing import List
 from wx.lib.scrolledpanel import ScrolledPanel
+from pubsub import pub
+import main_gui
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -55,12 +57,12 @@ class UserBox(wx.Panel):
         # Add the username to it
         username_text = wx.StaticText(self, label=self.user.username)
         username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(username_text, 1, wx.EXPAND)
+        self.vsizer.Add(username_text, 0, wx.EXPAND)
 
         # Add the status
         status_text = wx.StaticText(self, label=self.user.status)
         status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(status_text, 1, wx.EXPAND)
+        self.vsizer.Add(status_text, 0, wx.EXPAND)
 
         if align_right:
             # Add the vertical sizer to the sizer
@@ -113,6 +115,10 @@ class PanelsSwitcher(wx.BoxSizer):
         # Show the first panel and hide the rest of panels
         self.Show(panels[0])
 
+    def add_panel(self, panel):
+        self.panels.append(panel)
+        self.Add(panel, 1, wx.EXPAND)
+
     # Show some panel and hide the rest of panels
     def Show(self, panel):
         # For each panel in the list of panels
@@ -130,11 +136,11 @@ class PanelsSwitcher(wx.BoxSizer):
 class UsersScrollPanel(ScrolledPanel):
     def __init__(self, parent, align_right=False, on_click=None):
         super(UsersScrollPanel, self).__init__(parent)
-        self.SetupScrolling()
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.users = []
         self.align_right = align_right
         self.on_click = on_click
+        self.SetupScrolling()
 
         self.SetSizer(self.sizer)
 
@@ -146,7 +152,8 @@ class UsersScrollPanel(ScrolledPanel):
         else:
             self.sizer.Add(user_box, 0, wx.EXPAND)
 
-        print(self.GetSize(), 'sizee', user.username)
+        self.Refresh()
+        self.Layout()
 
     def remove_user(self, username: str):
         index = -1
@@ -193,7 +200,9 @@ class SettingsDialog(wx.Dialog):
         self.name_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
         self.name_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.username_sizer.Add(self.name_label, 1, wx.ALIGN_CENTER)
+        self.username_sizer.AddSpacer(10)
         self.username_sizer.Add(self.name_input, 1, wx.ALIGN_CENTER)
+        self.username_sizer.AddSpacer(10)
         self.username_sizer.Add(self.name_submit_button, 1, wx.ALIGN_CENTER)
 
         self.picture_label = wx.StaticText(self, label='Change profile picture:')
@@ -201,21 +210,27 @@ class SettingsDialog(wx.Dialog):
                                                                                "*.gif)|*.jpg;*.png;*.gif")
         self.pic_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.picture_sizer.Add(self.picture_label, 1, wx.ALIGN_CENTER)
+        self.picture_sizer.AddSpacer(10)
         self.picture_sizer.Add(self.file_picker, 1, wx.ALIGN_CENTER)
+        self.picture_sizer.AddSpacer(10)
         self.picture_sizer.Add(self.pic_submit_button, 1, wx.ALIGN_CENTER)
 
         self.status_label = wx.StaticText(self, label='Change status:')
         self.status_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
         self.status_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.status_sizer.Add(self.status_label, 1, wx.ALIGN_CENTER)
+        self.status_sizer.AddSpacer(10)
         self.status_sizer.Add(self.status_input, 1, wx.ALIGN_CENTER)
+        self.status_sizer.AddSpacer(10)
         self.status_sizer.Add(self.status_submit_button, 1, wx.ALIGN_CENTER)
 
         self.password_label = wx.StaticText(self, label='Change password:')
         self.password_input = wx.TextCtrl(self, style=wx.TE_PASSWORD | wx.TE_LEFT, size=(100, 20))
         self.pass_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.password_sizer.Add(self.password_label, 1, wx.ALIGN_CENTER)
+        self.password_sizer.AddSpacer(10)
         self.password_sizer.Add(self.password_input, 1, wx.ALIGN_CENTER)
+        self.password_sizer.AddSpacer(10)
         self.password_sizer.Add(self.pass_submit_button, 1, wx.ALIGN_CENTER)
 
         self.back_button = wx.Button(self, label='Back', size=(100, 50))
@@ -400,11 +415,13 @@ class MessagesPanel(ScrolledPanel):
 
 
 class ChatTools(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, chat_id):
         super(ChatTools, self).__init__(parent)
+        self.parent = parent
         self.MAX_MESSAGE_LENGTH = 150
         self.MAX_LINES = 3
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.chat_id = chat_id
 
         self.message_input = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
         # Create a font object with the desired font size
@@ -424,6 +441,7 @@ class ChatTools(wx.Panel):
         file_image = wx.Image("assets/send.png", wx.BITMAP_TYPE_ANY)
         file_image = resize_image(file_image, self.send_file_button.GetSize()[0]*3, self.send_file_button.GetSize()[1]*3)
         self.send_button.SetBitmap(file_image.ConvertToBitmap())
+        self.send_button.Bind(wx.EVT_BUTTON, self.onMessageSend)
 
         self.sizer.Add(self.send_file_button, 1, wx.EXPAND)
         self.sizer.Add(self.message_input, 5, wx.EXPAND)
@@ -438,6 +456,14 @@ class ChatTools(wx.Panel):
             file_path = dialog.GetPath()
             # TODO: Do something with the selected file path
         dialog.Destroy()
+
+    def onMessageSend(self, event):
+        raw_message = str(self.message_input.GetValue())
+        if raw_message != '':
+            # TODO: encrypt raw message
+            msg = Protocol.send_message(User.this_user.username, self.chat_id, raw_message)
+            self.parent.GetParent().parent.parent.chats_com.send_data(msg)
+            self.message_input.Clear()
 
 
 class ChatMessage(wx.Panel):
@@ -489,15 +515,24 @@ class GroupsSwitcher(wx.BoxSizer):
         self.groups_panels = {}
         self.groups = {}
 
+        pub.subscribe(self.onTextMessage, 'text_message')
+
+    def onTextMessage(self, sender, chat_id, raw_message):
+        sender_user = main_gui.MainPanel.get_user_by_name(sender)
+        print('adding msg', raw_message)
+        self.groups[chat_id][0].add_text_message(sender_user, raw_message)
+
     def add_group(self, group_id, users: List[User]):
         group_panel = wx.Panel(self.parent)
 
         group_members = UsersScrollPanel(group_panel)
         group_messages = MessagesPanel(group_panel)
-        chat_tools = ChatTools(group_panel)
+        chat_tools = ChatTools(group_panel, group_id)
         chat_sizer = wx.BoxSizer(wx.VERTICAL)
         chat_sizer.Add(group_messages, 6, wx.EXPAND)
         chat_sizer.Add(chat_tools, 1, wx.EXPAND)
+        add_group_member_button = wx.Button(group_panel, label='Add group member')
+        add_group_member_button.Bind(wx.EVT_BUTTON, self.onGroupMemberAdd)
 
         self.groups[group_id] = (group_messages, group_members, chat_tools)
 
@@ -506,13 +541,21 @@ class GroupsSwitcher(wx.BoxSizer):
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(chat_sizer, 3, wx.EXPAND)
-        sizer.Add(group_members, 1, wx.EXPAND)
+
+        right_bar_sizer = wx.BoxSizer(wx.VERTICAL)
+        right_bar_sizer.Add(group_members, 6, wx.EXPAND)
+        right_bar_sizer.Add(add_group_member_button, 1, wx.EXPAND)
+
+        sizer.Add(right_bar_sizer, 1, wx.EXPAND)
         group_panel.SetSizer(sizer)
 
         self.Add(group_panel, 1, wx.EXPAND)
         group_panel.Hide()
 
         self.groups_panels[group_id] = group_panel
+
+    def onGroupMemberAdd(self, event):
+        pass
 
     def add_group_member(self, group_id, new_member: User):
         self.groups[group_id][1].add_user(new_member)
@@ -536,6 +579,7 @@ class GroupsPanel(wx.Panel):
         self.parent = parent
 
         self.sizer = GroupsSwitcher(self)
+        self.SetSizer(self.sizer)
 
 
 class CreateGroupDialog(wx.Dialog):
@@ -579,6 +623,53 @@ class CreateGroupDialog(wx.Dialog):
 
     def on_cancel(self, event):
         # Handle the "Cancel" button click
+        self.EndModal(wx.ID_CANCEL)
+
+
+class AddFriendDialog(wx.Dialog):
+    def __init__(self, parent):
+        super().__init__(parent, title='Add a new friend')
+
+        panel = wx.Panel(self)
+
+        self.friend_username = None
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        hbox1 = wx.BoxSizer(wx.HORIZONTAL)
+        st1 = wx.StaticText(panel, label='Enter username:')
+        hbox1.Add(st1, flag=wx.RIGHT, border=8)
+
+        self.friend_username = wx.TextCtrl(panel)
+        hbox1.Add(self.friend_username, proportion=1)
+        vbox.Add(hbox1, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
+
+        vbox.Add((-1, 10))
+
+        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+        btn_add = wx.Button(panel, label='Add')
+        btn_add.Bind(wx.EVT_BUTTON, self.OnAdd)
+        hbox2.Add(btn_add)
+
+        btn_cancel = wx.Button(panel, label='Cancel')
+        btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
+        hbox2.Add(btn_cancel, flag=wx.LEFT, border=5)
+
+        vbox.Add(hbox2, flag=wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, border=10)
+
+        panel.SetSizer(vbox)
+        vbox.Fit(self)
+        self.Centre()
+
+    def OnAdd(self, event):
+        friend_username = self.friend_username.GetValue()
+        if friend_username:
+            self.friend_username = friend_username
+            self.EndModal(wx.ID_OK)
+        else:
+            wx.MessageBox('Please enter a username.', 'Error', wx.OK | wx.ICON_ERROR)
+
+    def OnCancel(self, event):
         self.EndModal(wx.ID_CANCEL)
 
 
