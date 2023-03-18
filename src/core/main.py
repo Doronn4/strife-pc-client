@@ -11,6 +11,7 @@ import wx
 from pubsub import pub
 from src.gui.main_gui import MainFrame
 import wx.lib.inspection
+from src.handlers.file_handler import FileHandler
 
 
 def handle_register_ans(message):
@@ -27,6 +28,8 @@ def handle_added_to_group(message):
     group_name = message['group_name']
     chat_id = message['chat_id']
     group_key = message['group_key']
+    KeysManager.add_key(chat_id, group_key)
+    print('adding key')
     wx.CallAfter(pub.sendMessage, 'added_to_group', group_name=group_name, chat_id=chat_id)
 
 
@@ -43,6 +46,18 @@ def handle_text_message(message):
     wx.CallAfter(pub.sendMessage, 'text_message', sender=sender, chat_id=chat_id, raw_message=raw_message)
 
 
+def handle_user_pic(message, file_contents):
+    username = message['pfp_username']
+    wx.CallAfter(pub.sendMessage, 'user_pic', contents=file_contents, username=username)
+
+
+def update_chats(message):
+    chats_names = message['chats_names']
+    chats_ids = message['chats_ids']
+    chats = zip(chats_ids, chats_names)
+    wx.CallAfter(pub.sendMessage, 'chats_list', chats=chats)
+
+
 approve_reject_dict = {
     1: handle_register_ans,
     2: handle_login_ans,
@@ -51,8 +66,8 @@ approve_reject_dict = {
 
 general_dict = {
     # 'friend_request': friend_request_received,
-    'added_to_group': handle_added_to_group
-    # 'chats_list': update_chats,
+    'added_to_group': handle_added_to_group,
+    'chats_list': update_chats,
     # 'group_members': update_group_members,
     # 'user_status': update_user_status,
     # 'friend_added': friend_added,
@@ -64,6 +79,11 @@ general_dict = {
 
 chats_dict = {
     'text_message': handle_text_message
+}
+
+files_dict = {
+    'user_profile_picture': handle_user_pic,
+    'file_in_chat': None
 }
 
 
@@ -109,7 +129,23 @@ def handle_chats_messages(com, q):
 
 
 def handle_files_messages(com, q):
-    pass
+    while True:
+        # Take the data from the queue
+        data = q.get()
+        if type(data) != str:
+            data = data.decode('UTF-8')
+        # Un-protocol the message from the server
+        message = Protocol.unprotocol_msg("files", data)
+
+        if message['opname'] == 'approve_reject':
+            if message['function_opcode'] in approve_reject_dict.keys():
+                approve_reject_dict[message['function_opcode']](message)
+
+        # Check if the name of the operation is in the dict of functions
+        elif message['opname'] in files_dict.keys() or True:
+            file_contents = q.get()
+            # Call the function according to the operation
+            files_dict[message['opname']](message, file_contents)
 
 
 def main():
@@ -132,12 +168,12 @@ def main():
     script_path = Path(os.path.abspath(__file__))
     wd = script_path.parent.parent.parent
     os.chdir(str(wd))
-    KeysManager.initialize(str(wd) + 'keys.json')
+    KeysManager.initialize(str(wd) + '\\keys')
+    FileHandler.initialize(str(wd)+'\\files')
 
     app = wx.App()
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com, chats_com=chats_com, files_com=files_com)
     main_frame.Show()
-    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
 

@@ -5,6 +5,7 @@ from src.core.client_protocol import Protocol
 import wx
 from src.gui.gui_util import PanelsSwitcher
 from pubsub import pub
+from src.core.keys_manager import KeysManager
 
 
 class RegisterPanel(wx.Panel):
@@ -284,6 +285,8 @@ class LoginPanel(wx.Panel):
 
     def onLoginAnswer(self, is_valid):
         if is_valid:
+            # Load the chats keys with the password
+            KeysManager.load_keys(self.password_input.GetValue())
             self.parent.move_to_main()
         else:
             gui_util.User.this_user = None

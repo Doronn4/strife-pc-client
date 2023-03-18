@@ -6,6 +6,8 @@ from typing import List
 from wx.lib.scrolledpanel import ScrolledPanel
 from pubsub import pub
 import main_gui
+from src.handlers.file_handler import FileHandler
+from src.core.keys_manager import KeysManager
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -15,14 +17,27 @@ MAX_PARTICIPANTS = 6
 class User:
     this_user = None
 
-    def __init__(self, username='NoUser', status='', pic='assets/strife_logo.png', chat_id=-1):
+    def __init__(self, username='NoUser', status='', chat_id=-1):
         self.username = username
         self.status = status
-        self.pic = wx.Image(pic, wx.BITMAP_TYPE_ANY)
+        self.pic = wx.Image('assets/strife_logo.png', wx.BITMAP_TYPE_ANY)
         self.video_frame = None
         self.last_update = 0
         self.MAX_TIMEOUT = 3
         self.chat_id = chat_id
+        self.call_on_update = []
+        self.update_pic()
+
+    def update_pic(self):
+        path = FileHandler.get_pfp_path(self.username)
+        if path:
+            self.pic = wx.Image(path, wx.BITMAP_TYPE_ANY)
+
+        for func in self.call_on_update:
+            func()
+
+    def add_func_on_update(self, func):
+        self.call_on_update.append(func)
 
     def update_video(self, frame):
         self.video_frame = frame
@@ -43,6 +58,7 @@ class UserBox(wx.Panel):
 
         self.parent = parent
         self.user = user
+        self.user.add_func_on_update(self.onPicUpdate)
 
         self.onClick = onClick
 
@@ -74,18 +90,18 @@ class UserBox(wx.Panel):
             pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
-            static_pic = wx.StaticBitmap(self, bitmap=bitmap)
-            static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-            self.sizer.Add(static_pic, 0, wx.ALIGN_CENTER)
+            self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
+            self.static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+            self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
 
         else:
             # Add user profile picture
             pic = self.user.pic\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
-            static_pic = wx.StaticBitmap(self, bitmap=bitmap)
-            static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-            self.sizer.Add(static_pic, 0, wx.ALIGN_CENTER)
+            self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
+            self.static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+            self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
 
             self.sizer.AddSpacer(10)
 
@@ -95,6 +111,48 @@ class UserBox(wx.Panel):
     def handle_click(self, event):
         if self.onClick:
             self.onClick(self.user.chat_id)
+
+    def onPicUpdate(self):
+        pic = self.user.pic \
+            .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+        bitmap = wx.Bitmap(pic)
+        self.static_pic.SetBitmap(bitmap)
+        self.Refresh()
+
+
+class SelectFriendDialog(wx.Dialog):
+    def __init__(self, parent, friends_list):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Select Friend")
+
+        self.friend_choice = wx.Choice(self, wx.ID_ANY, choices=friends_list)
+        self.add_member_button = wx.Button(self, wx.ID_ANY, "Add Member")
+        self.cancel_button = wx.Button(self, wx.ID_ANY, "Cancel")
+
+        self.add_member_button.Bind(wx.EVT_BUTTON, self.on_add_member)
+        self.cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
+
+        self.friend_chosen = None
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Select a friend:"), 0, wx.ALL, 10)
+        sizer.Add(self.friend_choice, 0, wx.ALL, 10)
+        sizer.Add(self.add_member_button, 0, wx.ALL, 10)
+        sizer.Add(self.cancel_button, 0, wx.ALL, 10)
+        self.SetSizer(sizer)
+
+        self.Fit()
+        self.Layout()
+
+    def on_add_member(self, event):
+        # Do something when "Add Member" button is clicked
+        self.friend_chosen = self.friend_choice.GetStringSelection()
+        if not self.friend_chosen:
+            wx.MessageBox('Please choose a friend to add', 'Error', wx.OK | wx.ICON_ERROR)
+        else:
+            self.EndModal(wx.ID_OK)
+
+    def on_cancel(self, event):
+        self.EndModal(wx.ID_CANCEL)
 
 
 class PanelsSwitcher(wx.BoxSizer):
@@ -154,6 +212,7 @@ class UsersScrollPanel(ScrolledPanel):
 
         self.Refresh()
         self.Layout()
+        self.SetupScrolling()
 
     def remove_user(self, username: str):
         index = -1
@@ -164,6 +223,10 @@ class UsersScrollPanel(ScrolledPanel):
 
         if index != -1:
             self.sizer.Remove(index)
+
+        self.Refresh()
+        self.Layout()
+        self.SetupScrolling()
 
     def handle_click(self, chat_id):
         for userbox in self.users:
@@ -514,6 +577,8 @@ class GroupsSwitcher(wx.BoxSizer):
         # A dict of all the groups panels where the key is the group id
         self.groups_panels = {}
         self.groups = {}
+        self.add_member_dialog = SelectFriendDialog(self.parent,
+                                                    [friend.username for friend in main_gui.MainPanel.my_friends])
 
         pub.subscribe(self.onTextMessage, 'text_message')
 
@@ -531,7 +596,7 @@ class GroupsSwitcher(wx.BoxSizer):
         chat_sizer = wx.BoxSizer(wx.VERTICAL)
         chat_sizer.Add(group_messages, 6, wx.EXPAND)
         chat_sizer.Add(chat_tools, 1, wx.EXPAND)
-        add_group_member_button = wx.Button(group_panel, label='Add group member')
+        add_group_member_button = wx.Button(group_panel, label='Add group member', id=group_id)
         add_group_member_button.Bind(wx.EVT_BUTTON, self.onGroupMemberAdd)
 
         self.groups[group_id] = (group_messages, group_members, chat_tools)
@@ -555,7 +620,23 @@ class GroupsSwitcher(wx.BoxSizer):
         self.groups_panels[group_id] = group_panel
 
     def onGroupMemberAdd(self, event):
-        pass
+        group_id = event.GetId()
+        friends_usernames = [friend.username for friend in main_gui.MainPanel.my_friends]
+        group_key = KeysManager.get_chat_key(group_id)
+        # Check if the window is already shown
+        if not self.add_member_dialog.IsShown():
+            # Create a new dialog
+            self.add_member_dialog = SelectFriendDialog(self.parent, friends_usernames)
+            # Get the return value of the dialog
+            val = self.add_member_dialog.ShowModal()
+            # If the dialog wasn't canceled
+            if val == wx.ID_OK:
+                # Get the chosen friend username
+                friend_username = self.add_member_dialog.friend_chosen
+                # Construct a message to add the friend to the group
+                msg = Protocol.add_member_to_group(group_id, friend_username, group_key)
+                # Send the message to the server
+                self.parent.general_com.send_data(msg)
 
     def add_group_member(self, group_id, new_member: User):
         self.groups[group_id][1].add_user(new_member)

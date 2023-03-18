@@ -2,7 +2,7 @@ import base64
 import socket
 import threading
 import queue
-from src.core.cryptions import RSACipher
+from src.core.cryptions import RSACipher, AESCipher
 
 
 class ClientCom:
@@ -10,30 +10,49 @@ class ClientCom:
     Represents a TCP based communication class
     """
 
-    def __init__(self, server_port: int, server_ip: str, message_queue: queue.Queue):
+    def __init__(self, server_port: int, server_ip: str, message_queue: queue.Queue, com_type='general'):
+        """
+        Initializes the client communication object.
+
+        :param server_port: The port number of the server.
+        :type server_port: int
+        :param server_ip: The IP address of the server.
+        :type server_ip: str
+        :param message_queue: The queue to put received messages.
+        :type message_queue: queue.Queue
+        :param com_type: The type of communication (e.g. 'general' or 'files').
+        :type com_type: str
+        """
         self.CHUNK_SIZE = 1024
         self.server_port = server_port
         self.server_ip = server_ip
         self.message_queue = message_queue
         self.socket = socket.socket()
+        self.com_type = com_type
 
         self.server_key = None
         self.rsa = RSACipher()
+        self.aes_key = None
 
         self.CONNECTION_EXCEPTION = Exception('Connection to server failed')
         self.NOT_RUNNING_EXCEPTION = Exception('Not running')
         self.INVALID_TYPE_EXCEPTION = Exception('Invalid data type')
 
         self.running = False
+
         # Start the main thread
         self.main_thread = threading.Thread(target=self._main_loop)
         self.main_thread.start()
 
     def send_data(self, data):
         """
-        Send the data to the server
-        :param data: The data to send
-        :return: -
+        Sends data to the server.
+
+        :param data: The data to send.
+        :type data: str or bytes
+        :raises: NOT_RUNNING_EXCEPTION if client com is not running
+        :raises: INVALID_TYPE_EXCEPTION if data is not a str or bytes object
+        :raises: CONNECTION_EXCEPTION if the socket connection fails
         """
         # Check if the client com is running
         if not self.running:
@@ -47,9 +66,11 @@ class ClientCom:
                 raise self.INVALID_TYPE_EXCEPTION
 
         try:
-            enc_data = self.rsa.encrypt(data, self.server_key)
+            enc_data = AESCipher.encrypt(self.aes_key, data).encode()
+
             # send data length
             self.socket.send(str(len(enc_data)).zfill(4).encode())
+
             # Send the data
             self.socket.send(enc_data)
         except Exception:
@@ -57,9 +78,12 @@ class ClientCom:
 
     def recv_large(self, size: int):
         """
-        Receives a large sized data object (For example a picture)
-        :param size: The size of the data
-        :return: The data
+        Receives a large sized data object (For example a picture).
+
+        :param size: The size of the data to receive.
+        :type size: int
+        :returns: The received data as a bytearray.
+        :raises: NOT_RUNNING_EXCEPTION if client com is not running
         """
         # Check if the client com is running
         if not self.running:
@@ -100,10 +124,7 @@ class ClientCom:
 
         # Change keys with server
         try:
-            key = self.socket.recv(1024).decode()
-            self.server_key = key
-            self.socket.send(self.rsa.get_string_public_key().encode())
-
+            self.switch_keys()  # Switch encryption keys with server
         except Exception as e:
             raise self.CONNECTION_EXCEPTION
 
@@ -112,23 +133,77 @@ class ClientCom:
         # Run while the client_com object is running
         while self.running:
             try:
+                if self.com_type == 'files':
+                    size_length = 10
+                else:
+                    size_length = 4
+
                 # Receive the size of the data and convert it to an int
-                size = int(self.socket.recv(4).decode())
+                size = int(self.socket.recv(size_length).decode())
                 # Receive the data
-                data = self.socket.recv(size)
+                if self.com_type == 'files':
+                    data = self.receive_file(size)  # Receive file data
+                else:
+                    data = self.socket.recv(size)
+
             # Invalid size exception
             except ValueError:
-                print('invalid size')
                 self.running = False
             # Socket exception
             except socket.error:
-                print('socket error')
                 self.running = False
             else:
-                dec_data = self.rsa.decrypt(data)
-                # Put the received data inside the message queue
-                self.message_queue.put(dec_data.decode())
-    
+                try:
+                    if self.com_type == 'files':
+                        dec_data = AESCipher.decrypt_file(self.aes_key, data)  # Decrypt file data
+                    else:
+                        dec_data = AESCipher.decrypt(self.aes_key, data)  # Decrypt regular data
+                except Exception:
+                    pass
+                else:
+                    # Put the received data inside the message queue
+                    self.message_queue.put(dec_data)
+
+    def receive_file(self, file_size, chunk_size=1024):
+        """
+        Receives file data from the server
+        :param file_size: The size of the file to receive
+        :type file_size: int
+        :param chunk_size: The size of each chunk of data to receive
+        :type chunk_size: int
+        :return: The received file data
+        :rtype: bytes
+        """
+        data = b''
+        bytes_received = 0
+
+        while bytes_received < file_size:
+            chunk = self.socket.recv(min(chunk_size, file_size - bytes_received))
+            if not chunk:
+                raise ConnectionError("Connection closed prematurely.")
+            data += chunk
+            bytes_received += len(chunk)
+
+        return data
+
+    def switch_keys(self):
+        """
+        Switches encryption keys with the server
+        :return: -
+        :rtype: -
+        """
+        key = self.socket.recv(1024).decode()  # Receive server's public key
+        self.server_key = key
+        self.socket.send(self.rsa.get_string_public_key().encode())  # Send client's public key
+        aes_key_enc = self.socket.recv(256)  # Receive encrypted AES key
+        self.aes_key = self.rsa.decrypt(aes_key_enc).decode()  # Decrypt AES key
+
     def close(self):
+        """
+        Closes the client communication object
+        :return: -
+        :rtype: -
+        """
         self.running = False
-        self.socket = None
+        self.socket = None  # Close socket connection
+

@@ -3,12 +3,18 @@ import os
 
 
 class FileHandler:
-    PFPS_PATH = '/profiles'
+    PFPS_PATH = '\\profiles'
     base_path = ''
 
     @staticmethod
     def initialize(base_path):
         FileHandler.base_path = base_path
+
+        if not os.path.exists(FileHandler.base_path):
+            os.mkdir(FileHandler.base_path)
+
+        if not os.path.exists(FileHandler.base_path+FileHandler.PFPS_PATH):
+            os.mkdir(FileHandler.base_path+FileHandler.PFPS_PATH)
 
     @staticmethod
     def save_file(contents: bytes, path, file_name: str):
@@ -17,14 +23,21 @@ class FileHandler:
 
     @staticmethod
     def save_pfp(contents: bytes, username: str):
-        with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}/{username}.png', 'wb') as f:
+        path = f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png'
+        with open(path, 'wb') as f:
             f.write(contents)
+        return path
 
     @staticmethod
     def load_pfp(username: str):
-        with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}/{username}.png', 'rb') as f:
+        with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png', 'rb') as f:
             picture = f.read()
         return picture
+
+    @staticmethod
+    def get_pfp_path(username: str):
+        is_exist = os.path.exists(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png')
+        return f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png' if is_exist else None
 
     @staticmethod
     def load_file(path) -> bytes:

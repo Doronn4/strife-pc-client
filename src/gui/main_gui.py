@@ -1,13 +1,18 @@
+import sys
+
 import wx
 import gui_util
 import login_gui
 from src.core.client_protocol import Protocol
 from pubsub import pub
 import wx.lib.mixins.inspection
+from src.handlers.file_handler import FileHandler
+from src.core.keys_manager import KeysManager
 
 
 class MainPanel(wx.Panel):
     known_users = []
+    my_friends = []
 
     def __init__(self, parent):
         super(MainPanel, self).__init__(parent)
@@ -106,6 +111,60 @@ class MainPanel(wx.Panel):
 
         pub.subscribe(self.onGroupJoin, 'added_to_group')
         pub.subscribe(self.onAddFriendAnswer, 'friend_answer')
+        pub.subscribe(self.onUserPic, 'user_pic')
+        pub.subscribe(self.onChatsList, 'chats_list')
+        self.load_friends()
+
+    def onUserPic(self, contents, username):
+        if username == gui_util.User.this_user.username:
+            path = FileHandler.save_pfp(contents, username)
+            gui_util.User.this_user.update_pic()
+        else:
+            path = FileHandler.save_pfp(contents, username)
+            MainPanel.get_user_by_name(username).update_pic()
+
+    def onChatsList(self, chats):
+        for chat_id, chat_name in chats:
+            if chat_name.startswith('PRIVATE') and len(chat_name.split('%%')) == 3:
+                # If it's a private chat
+                # Get the usernames in the private chat (current user and the friend)
+                usernames = chat_name.split('%%')[1]
+                # Get the name of the other user (the friend)
+                other_username = usernames[0] if usernames[0] != gui_util.User.this_user.username else usernames[1]
+                # Create a new user object for the friend
+                user = gui_util.User(username=other_username, chat_id=chat_id)
+                # Add the user to the list of known users
+                MainPanel.known_users.append(user)
+                # Add the user to the list of friends
+                MainPanel.my_friends.append(user)
+                # Add the friend user to the friends panel
+                self.friends_panel.add_user(user)
+                # Create a group to represent the chat with the friend
+                self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user, user])
+                # Construct a message to request the user's profile pic
+                msg = Protocol.request_user_pfp(other_username)
+                # Send the message to the server
+                self.parent.general_com.send_data(msg)
+            else:
+                # If it's a group chat
+                # Create a user object for the group
+                group_user = gui_util.User(username=chat_name, chat_id=chat_id)
+                # Add the group's user object to the friends panel
+                self.friends_panel.add_user(group_user)
+                # Create a new group in the groups panel and add the current user to it
+                self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
+                # Send a message to the server requesting a list of the group's members
+                msg = Protocol.request_group_members(chat_id)
+                self.parent.general_com.send_data(msg)
+
+    def load_friends(self):
+        # Request the list of chats
+        msg = Protocol.request_chats()
+        self.parent.general_com.send_data(msg)
+
+        # Request the current user's profile pic
+        msg = Protocol.request_user_pfp(gui_util.User.this_user.username)
+        self.parent.general_com.send_data(msg)
 
     def onAddFriendAnswer(self, is_valid):
         if not is_valid:
@@ -127,6 +186,9 @@ class MainPanel(wx.Panel):
                 msg = Protocol.add_friend(friend_username)
                 # Send the message to the server
                 self.parent.general_com.send_data(msg)
+
+    def onFriendAdded(self, friend_username):
+        pass
 
     def onChatSelect(self, chat_id: int):
         """
@@ -154,7 +216,7 @@ class MainPanel(wx.Panel):
         pass
 
     def onGroupJoin(self, group_name, chat_id):
-        self.friends_panel.add_user(gui_util.User(username=group_name, pic='assets/group_pic.png', chat_id=chat_id))
+        self.friends_panel.add_user(gui_util.User(username=group_name, chat_id=chat_id))
         self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
 
     def onGroupCreateButton(self, event):
@@ -245,7 +307,14 @@ class MainFrame(wx.Frame):
 
         self.panel_switcher = gui_util.PanelsSwitcher(self, [self.login_panel, self.register_panel])
 
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+
     def move_to_main(self):
         self.main_panel = MainPanel(self)
         self.panel_switcher.add_panel(self.main_panel)
         self.panel_switcher.Show(self.main_panel)
+
+    def onClose(self, event):
+        # TODO: add things
+        KeysManager.save_keys()
+        event.Skip()

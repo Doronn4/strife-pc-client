@@ -82,7 +82,7 @@ class Protocol:
         'text_message': ('chat_id', 'sender', 'message'),
         'file_description': ('file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_hash', 'file_contents'),
-        'user_profile_picture': ('pfp_username', 'image_contents')
+        'user_profile_picture': ('pfp_username',)
     }
 
     @staticmethod
@@ -240,7 +240,7 @@ class Protocol:
     @staticmethod
     def request_user_pfp(username):
         # Get the opcode of request_user_pfp
-        opcode = Protocol.general_opcodes['request_user_pfp']
+        opcode = Protocol.general_opcodes['request_user_picture']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
         # Return the message after protocol
@@ -339,7 +339,6 @@ class Protocol:
             # Get the parameters names of the message
             params_names = Protocol.s_opcodes_params[Protocol.s_files_opcodes[opcode]]
 
-        print(params_names)
         # Assign a value for each parameter in a dict
         for i in range(len(values)):
             value = values[i]
