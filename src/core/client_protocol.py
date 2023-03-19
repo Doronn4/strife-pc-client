@@ -57,7 +57,8 @@ class Protocol:
     }
     s_chat_opcodes = {
         1: 'text_message',
-        2: 'file_description'
+        2: 'file_description',
+        3: 'chat_history'
     }
     s_files_opcodes = {
         1: 'file_in_chat',
@@ -82,7 +83,8 @@ class Protocol:
         'text_message': ('chat_id', 'sender', 'message'),
         'file_description': ('file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_hash', 'file_contents'),
-        'user_profile_picture': ('pfp_username',)
+        'user_profile_picture': ('pfp_username',),
+        'chat_history': ('messages',)
     }
 
     @staticmethod

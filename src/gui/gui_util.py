@@ -8,6 +8,7 @@ from pubsub import pub
 import main_gui
 from src.handlers.file_handler import FileHandler
 from src.core.keys_manager import KeysManager
+from src.core.cryptions import AESCipher
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -15,9 +16,22 @@ MAX_PARTICIPANTS = 6
 
 
 class User:
+    # This is a class variable that will hold the currently active user object.
+    # It is initialized to None.
     this_user = None
 
     def __init__(self, username='NoUser', status='', chat_id=-1):
+        """
+        This is the constructor for the User class.
+
+        :param username: A string representing the user's name.
+        :type username: str
+        :param status: A string representing the user's status.
+        :type status: str
+        :param chat_id: An integer representing the user's chat ID.
+        :type chat_id: int
+        """
+        # Initialize the instance variables with the provided values.
         self.username = username
         self.status = status
         self.pic = wx.Image('assets/strife_logo.png', wx.BITMAP_TYPE_ANY)
@@ -26,25 +40,61 @@ class User:
         self.MAX_TIMEOUT = 3
         self.chat_id = chat_id
         self.call_on_update = []
+        # Call the update_pic() method to update the user's profile picture.
         self.update_pic()
 
     def update_pic(self):
+        """
+        This method updates the user's profile picture.
+
+        :return: None
+        :rtype: None
+        """
+        # Get the path to the user's profile picture.
         path = FileHandler.get_pfp_path(self.username)
+        # If a path is found, set the user's profile picture to the image at that path.
         if path:
             self.pic = wx.Image(path, wx.BITMAP_TYPE_ANY)
 
+        # Call each function in the call_on_update list.
+        # This list is used to update the user's profile picture when it changes.
         for func in self.call_on_update:
             func()
 
     def add_func_on_update(self, func):
+        """
+        This method adds a function to the call_on_update list.
+
+        :param func: The function to be added.
+        :type func: function
+        :return: None
+        :rtype: None
+        """
         self.call_on_update.append(func)
 
     def update_video(self, frame):
+        """
+        This method updates the user's video frame.
+
+        :param frame: The new video frame.
+        :type frame: numpy.ndarray
+        :return: None
+        :rtype: None
+        """
         self.video_frame = frame
         self.last_update = time.time()
 
     def get_frame(self):
+        """
+        This method returns the user's current video frame.
+
+        :return: The current video frame.
+        :rtype: numpy.ndarray
+        """
+        # Get the current video frame.
         frame = self.video_frame
+        # If there is no video frame or the last update was more than MAX_TIMEOUT seconds ago,
+        # return the user's profile picture as a bitmap.
         if frame is None or time.time() - self.last_update > self.MAX_TIMEOUT:
             frame = self.pic.ConvertToBitmap()
 
@@ -53,40 +103,61 @@ class User:
 
 class UserBox(wx.Panel):
     def __init__(self, parent, user: User, align_right=False, onClick=None):
+        """
+        Initializes the UserBox object.
+
+        :param parent: Parent object that this UserBox is attached to
+        :type parent: wx.Panel
+        :param user: User object to display in the UserBox
+        :type user: User
+        :param align_right: Whether to align the UserBox to the right or not
+        :type align_right: bool
+        :param onClick: Function to be called when UserBox is clicked
+        :type onClick: function
+        """
         super(UserBox, self).__init__(parent)
+
+        # Define the relative size of the profile picture
         self.RELATIVE_PIC_SIZE = 0.04
 
+        # Store the parent and user objects
         self.parent = parent
         self.user = user
+
+        # Add function to update the profile picture when it is changed
         self.user.add_func_on_update(self.onPicUpdate)
 
+        # Store the onClick function
         self.onClick = onClick
 
+        # Bind the handle_click function to the left mouse button down event
         self.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
 
+        # Create the horizontal sizer for the UserBox
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SetSizer(self.sizer)
 
         # Add vertical sizer that contains the username and status
         self.vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Add the username to it
+        # Add the username to the vertical sizer
         username_text = wx.StaticText(self, label=self.user.username)
         username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
         self.vsizer.Add(username_text, 0, wx.EXPAND)
 
-        # Add the status
+        # Add the status to the vertical sizer
         status_text = wx.StaticText(self, label=self.user.status)
         status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
         self.vsizer.Add(status_text, 0, wx.EXPAND)
 
         if align_right:
-            # Add the vertical sizer to the sizer
+            # Add the vertical sizer to the horizontal sizer
             self.sizer.Add(self.vsizer, 0, wx.ALIGN_CENTER)
 
+            # Add a spacer to separate the vertical sizer and the profile picture
             self.sizer.AddSpacer(10)
 
-            # Add user profile picture
+            # Add the user profile picture to the horizontal sizer
             pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
@@ -95,7 +166,7 @@ class UserBox(wx.Panel):
             self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
 
         else:
-            # Add user profile picture
+            # Add the user profile picture to the horizontal sizer
             pic = self.user.pic\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
@@ -103,36 +174,69 @@ class UserBox(wx.Panel):
             self.static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
             self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
 
+            # Add a spacer to separate the profile picture and the vertical sizer
             self.sizer.AddSpacer(10)
 
-            # Add the vertical sizer to the sizer
+            # Add the vertical sizer to the horizontal sizer
             self.sizer.Add(self.vsizer, 0, wx.ALIGN_CENTER)
 
     def handle_click(self, event):
+        """
+        Handles the click event on the UserBox panel. Calls the function passed as onClick parameter
+        with the chat ID of the user associated with the panel, if it exists.
+
+        :param event: The event object
+        :type event: wx.Event
+        :return: None
+        :rtype: None
+        """
         if self.onClick:
             self.onClick(self.user.chat_id)
 
     def onPicUpdate(self):
+        """
+        Updates the user profile picture displayed on the UserBox panel.
+
+        :return: None
+        :rtype: None
+        """
+        # Scale the picture to the appropriate size
         pic = self.user.pic \
             .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
+        # Create a bitmap from the scaled picture
         bitmap = wx.Bitmap(pic)
+        # Set the bitmap as the profile picture displayed on the panel
         self.static_pic.SetBitmap(bitmap)
+        # Refresh the panel to show the updated profile picture
         self.Refresh()
 
 
 class SelectFriendDialog(wx.Dialog):
     def __init__(self, parent, friends_list):
+        """
+        Initializes the dialog window with a list of friends to select from.
+
+        :param parent: the parent window for this dialog
+        :type parent: wx.Window
+        :param friends_list: a list of friends to select from
+        :type friends_list: list
+        """
+        # Call the parent constructor with the dialog title
         wx.Dialog.__init__(self, parent, wx.ID_ANY, "Select Friend")
 
+        # Create the friend choice widget, add member button, and cancel button
         self.friend_choice = wx.Choice(self, wx.ID_ANY, choices=friends_list)
         self.add_member_button = wx.Button(self, wx.ID_ANY, "Add Member")
         self.cancel_button = wx.Button(self, wx.ID_ANY, "Cancel")
 
+        # Bind the add member and cancel button events
         self.add_member_button.Bind(wx.EVT_BUTTON, self.on_add_member)
         self.cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
 
+        # Initialize the selected friend to None
         self.friend_chosen = None
 
+        # Create a vertical box sizer and add the friend choice, add member, and cancel button widgets
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Select a friend:"), 0, wx.ALL, 10)
         sizer.Add(self.friend_choice, 0, wx.ALL, 10)
@@ -140,81 +244,154 @@ class SelectFriendDialog(wx.Dialog):
         sizer.Add(self.cancel_button, 0, wx.ALL, 10)
         self.SetSizer(sizer)
 
+        # Fit the dialog window to the size of its children and update the layout
         self.Fit()
         self.Layout()
 
     def on_add_member(self, event):
-        # Do something when "Add Member" button is clicked
+        """
+        Event handler for the add member button. Stores the selected friend and ends the dialog
+        with a success code.
+
+        :param event: the event object
+        :type event: wx.Event
+        :return: None
+        """
+        # Store the selected friend
         self.friend_chosen = self.friend_choice.GetStringSelection()
+
+        # Show an error message if no friend is selected
         if not self.friend_chosen:
             wx.MessageBox('Please choose a friend to add', 'Error', wx.OK | wx.ICON_ERROR)
         else:
+            # End the dialog with a success code
             self.EndModal(wx.ID_OK)
 
     def on_cancel(self, event):
+        """
+        Event handler for the cancel button. Ends the dialog with a cancel code.
+
+        :param event: the event object
+        :type event: wx.Event
+        :return: None
+        """
+        # End the dialog with a cancel code
         self.EndModal(wx.ID_CANCEL)
 
 
 class PanelsSwitcher(wx.BoxSizer):
-    # The constructor a parent window
-    # and a list of panels for switch between them
+    """
+    A sizer for switching between panels in a parent window.
+    """
+
     def __init__(self, parent, panels):
+        """
+        Constructor for PanelsSwitcher.
+
+        :param parent: Parent window.
+        :type parent: wx.Window
+        :param panels: List of panels to switch between.
+        :type panels: list of wx.Window
+        """
         # Initialize the base class
         wx.BoxSizer.__init__(self)
+
         # Attach this sizer to the parent window
         parent.SetSizer(self)
-        # Save the parent windows
+
+        # Save the parent window
         self.parent = parent
+
         # Save the list of panels
         self.panels = panels
+
         # Add all the panels into this sizer
         for panel in self.panels:
             self.Add(panel, 1, wx.EXPAND)
-        # Show the first panel and hide the rest of panels
+
+        # Show the first panel and hide the rest of the panels
         self.Show(panels[0])
 
     def add_panel(self, panel):
+        """
+        Adds a new panel to the list of panels.
+
+        :param panel: Panel to add.
+        :type panel: wx.Window
+        """
         self.panels.append(panel)
         self.Add(panel, 1, wx.EXPAND)
 
-    # Show some panel and hide the rest of panels
     def Show(self, panel):
+        """
+        Shows the given panel and hides the rest of the panels.
+
+        :param panel: Panel to show.
+        :type panel: wx.Window
+        """
         # For each panel in the list of panels
         for p in self.panels:
             # Show the given panel
             if p == panel:
                 p.Show()
             else:
-                # and hide the rest
+                # and hide the rest of the panels
                 p.Hide()
+
         # Rearrange the window
         self.parent.Layout()
 
 
 class UsersScrollPanel(ScrolledPanel):
     def __init__(self, parent, align_right=False, on_click=None):
-        super(UsersScrollPanel, self).__init__(parent)
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.users = []
-        self.align_right = align_right
-        self.on_click = on_click
-        self.SetupScrolling()
+        """
+        Initializes an instance of UsersScrollPanel.
 
-        self.SetSizer(self.sizer)
+        :param parent: The parent object.
+        :type parent: wx.Window
+        :param align_right: Aligns the user box to the right if True. Default is False.
+        :type align_right: bool
+        :param on_click: The function that will be called when a user box is clicked. Default is None.
+        :type on_click: function
+        """
+        super(UsersScrollPanel, self).__init__(parent)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)  # initializes a vertical box sizer
+        self.users = []  # list to store UserBox objects
+        self.align_right = align_right  # flag to align user box to the right
+        self.on_click = on_click  # function to call when user box is clicked
+        self.SetupScrolling()  # enables scrolling in the panel
+
+        self.SetSizer(self.sizer)  # sets the sizer for the panel
 
     def add_user(self, user: User):
-        user_box = UserBox(self, user, self.align_right, onClick=self.handle_click)
-        self.users.append(user_box)
+        """
+        Adds a UserBox object to the panel.
+
+        :param user: The user object to be added.
+        :type user: User
+        :return: None
+        :rtype: None
+        """
+        user_box = UserBox(self, user, self.align_right, onClick=self.handle_click)  # creates a UserBox object
+        self.users.append(user_box)  # adds the UserBox object to the list
         if self.align_right:
-            self.sizer.Add(user_box, 0, wx.EXPAND)
+            self.sizer.Add(user_box, 0, wx.EXPAND)  # adds the UserBox object to the sizer
         else:
             self.sizer.Add(user_box, 0, wx.EXPAND)
 
-        self.Refresh()
-        self.Layout()
-        self.SetupScrolling()
+        self.Refresh()  # updates the panel
+        self.Layout()  # updates the layout of the panel
+        self.SetupScrolling()  # enables scrolling in the panel
 
     def remove_user(self, username: str):
+        """
+        Removes a UserBox object from the panel.
+
+        :param username: The username of the UserBox object to be removed.
+        :type username: str
+        :return: None
+        :rtype: None
+        """
         index = -1
         for i in range(len(self.users)):
             if self.users[i].username == username:
@@ -224,21 +401,29 @@ class UsersScrollPanel(ScrolledPanel):
         if index != -1:
             self.sizer.Remove(index)
 
-        self.Refresh()
-        self.Layout()
-        self.SetupScrolling()
+        self.Refresh()  # updates the panel
+        self.Layout()  # updates the layout of the panel
+        self.SetupScrolling()  # enables scrolling in the panel
 
     def handle_click(self, chat_id):
+        """
+        Changes the background color of the clicked UserBox object and calls the on_click function.
+
+        :param chat_id: The chat id of the User object associated with the clicked UserBox object.
+        :type chat_id: int
+        :return: None
+        :rtype: None
+        """
         for userbox in self.users:
             if userbox.user.chat_id == chat_id:
-                userbox.SetBackgroundColour(wx.Colour(192, 192, 192))
-                userbox.Refresh()
+                userbox.SetBackgroundColour(wx.Colour(192, 192, 192))  # sets background color
+                userbox.Refresh()  # updates the UserBox object
             else:
-                userbox.SetBackgroundColour(wx.NullColour)
-                userbox.Refresh()
+                userbox.SetBackgroundColour(wx.NullColour)  # removes background color
+                userbox.Refresh()  # updates the UserBox object
 
         if self.on_click:
-            self.on_click(chat_id)
+            self.on_click(chat_id)  # calls the on_click function with the chat id as argument
 
 
 class SettingsDialog(wx.Dialog):
@@ -313,67 +498,147 @@ class SettingsDialog(wx.Dialog):
 
 class CallUserPanel(wx.Panel):
     def __init__(self, parent, user, fps=30):
+        """
+        Constructor for the CallUserPanel class.
+
+        :param parent: The parent wx.Window object.
+        :type parent: wx.Window
+        :param user: The user object to display in the panel.
+        :type user: User
+        :param fps: The number of frames per second for the timer.
+        :type fps: int
+        """
         super(CallUserPanel, self).__init__(parent)
 
         # Make the timer stop when the panel is destroyed
         self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
 
+        # Set instance variables
         self.user = user
         self.RELATIVE_SIZE = 0.2
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
+        # Get the initial frame for the user and set it as a wx.Bitmap object
         self.bmp = self.user.get_frame()
         self.bmp: wx.Bitmap
 
-        # Text
+        # Set up the label for the user's username
         self.label = wx.StaticText(self, label=self.user.username)
         # Set the font, size and color of the label
         label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
 
+        # Set up the timer for getting new frames and refreshing the display
         self.timer = wx.Timer(self)
         self.timer.Start(1000.0 / fps)
 
+        # Bind events to their respective methods
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_TIMER, self.NextFrame)
 
     def OnPaint(self, evt):
+        """
+        Event handler for the wx.EVT_PAINT event.
+        This method is called when the panel needs to be redrawn.
+
+        :param evt: The wx.PaintEvent object.
+        :type evt: wx.PaintEvent
+        """
         dc = wx.BufferedPaintDC(self, style=wx.BUFFER_VIRTUAL_AREA)
         dc.DrawBitmap(self.bmp, 0, 0)
 
     def NextFrame(self, event):
+        """
+        Event handler for the wx.EVT_TIMER event.
+        This method is called when the timer fires.
+        It gets the next frame for the user and refreshes the display.
+
+        :param event: The wx.TimerEvent object.
+        :type event: wx.TimerEvent
+        """
+        # Get the next frame for the user and set it as a wx.Bitmap object
         frame = self.user.get_frame()
         if type(frame) == wx.Bitmap:
             self.bmp = frame
         else:
             self.bmp.CopyFromBuffer(frame)
+        # Scale the bitmap to fit the size of the panel
         self.bmp = self.scale_bitmap(self.bmp, self.GetSize()[0], self.GetSize()[1])
+        # Refresh the display
         self.Refresh()
 
     @staticmethod
     def scale_bitmap(bitmap, width, height):
+        """
+        A static method for scaling a bitmap to a specified width and height.
+
+        :param bitmap: The bitmap to scale.
+        :type bitmap: wx.Bitmap
+        :param width: The desired width of the scaled bitmap.
+        :type width: int
+        :param height: The desired height of the scaled bitmap.
+        :type height: int
+        :return: The scaled bitmap.
+        :rtype: wx.Bitmap
+        """
+        # Convert the bitmap to a wx.Image object
         image = wx.ImageFromBitmap(bitmap)
+        # Scale the image
         image = image.Scale(width, height, wx.IMAGE_QUALITY_HIGH)
+        # Convert the image back to a wx.Bitmap object
         result = wx.BitmapFromImage(image)
         return result
 
 
 class CallGrid(wx.GridSizer):
     def __init__(self, parent):
+        """
+        Initializes a CallGrid object.
+
+        :param parent: A wxPython parent object.
+        :type parent: wxPython parent object.
+        """
         self.GAP = 10
         self.BORDER_WIDTH = 10
 
-        super(CallGrid, self).__init__(MAX_PARTICIPANTS/2, MAX_PARTICIPANTS/2, self.GAP)
+        # Call the parent constructor with the appropriate arguments
+        super(CallGrid, self).__init__(MAX_PARTICIPANTS / 2, MAX_PARTICIPANTS / 2, self.GAP)
+
+        # Initialize an empty list to store user panels
         self.users_panels = []
+
+        # Store the parent object
         self.parent = parent
 
     def add_user(self, user):
+        """
+        Adds a user panel to the grid.
+
+        :param user: A user object.
+        :type user: User object.
+        :return: None
+        :rtype: None
+        """
+        # Create a new CallUserPanel object with the provided user and store it in the list
         self.users_panels.append(CallUserPanel(self.parent, user))
+
+        # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
 
     def remove_user(self, username):
+        """
+        Removes a user panel from the grid.
+
+        :param username: The username of the user to remove.
+        :type username: str
+        :return: None
+        :rtype: None
+        """
+        # Loop through the user panels
         for panel in self.users_panels:
+            # Check if the current panel's user has the same username as the one provided
             if panel.user.username == username:
+                # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
                 break
 
@@ -523,8 +788,9 @@ class ChatTools(wx.Panel):
     def onMessageSend(self, event):
         raw_message = str(self.message_input.GetValue())
         if raw_message != '':
-            # TODO: encrypt raw message
-            msg = Protocol.send_message(User.this_user.username, self.chat_id, raw_message)
+            chat_key = KeysManager.get_chat_key(self.chat_id)
+            encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
+            msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
             self.parent.GetParent().parent.parent.chats_com.send_data(msg)
             self.message_input.Clear()
 
@@ -568,6 +834,11 @@ class ChatMessage(wx.Panel):
 
 class GroupsSwitcher(wx.BoxSizer):
     def __init__(self, parent):
+        """
+
+        :param parent:
+        :type parent:
+        """
         # Initialize the base class
         wx.BoxSizer.__init__(self)
         # Attach this sizer to the parent window
@@ -583,11 +854,33 @@ class GroupsSwitcher(wx.BoxSizer):
         pub.subscribe(self.onTextMessage, 'text_message')
 
     def onTextMessage(self, sender, chat_id, raw_message):
+        """
+
+        :param sender:
+        :type sender:
+        :param chat_id:
+        :type chat_id:
+        :param raw_message:
+        :type raw_message:
+        :return:
+        :rtype:
+        """
+        chat_key = KeysManager.get_chat_key(chat_id)
+        decrypted_message = AESCipher.decrypt(chat_key, raw_message)
         sender_user = main_gui.MainPanel.get_user_by_name(sender)
-        print('adding msg', raw_message)
-        self.groups[chat_id][0].add_text_message(sender_user, raw_message)
+        print('adding msg', decrypted_message)
+        self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
 
     def add_group(self, group_id, users: List[User]):
+        """
+
+        :param group_id:
+        :type group_id:
+        :param users:
+        :type users:
+        :return:
+        :rtype:
+        """
         group_panel = wx.Panel(self.parent)
 
         group_members = UsersScrollPanel(group_panel)
@@ -620,6 +913,13 @@ class GroupsSwitcher(wx.BoxSizer):
         self.groups_panels[group_id] = group_panel
 
     def onGroupMemberAdd(self, event):
+        """
+
+        :param event:
+        :type event:
+        :return:
+        :rtype:
+        """
         group_id = event.GetId()
         friends_usernames = [friend.username for friend in main_gui.MainPanel.my_friends]
         group_key = KeysManager.get_chat_key(group_id)
@@ -639,9 +939,25 @@ class GroupsSwitcher(wx.BoxSizer):
                 self.parent.general_com.send_data(msg)
 
     def add_group_member(self, group_id, new_member: User):
+        """
+
+        :param group_id:
+        :type group_id:
+        :param new_member:
+        :type new_member:
+        :return:
+        :rtype:
+        """
         self.groups[group_id][1].add_user(new_member)
 
     def Show(self, chat_id):
+        """
+
+        :param chat_id:
+        :type chat_id:
+        :return:
+        :rtype:
+        """
         # For each panel in the list of panels
         for id_, group_panel in self.groups_panels.items():
             # Show the given panel

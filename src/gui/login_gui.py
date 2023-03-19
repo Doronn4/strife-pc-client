@@ -339,8 +339,8 @@ class LoginFrame(wx.Frame):
         self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
 
         self.app = app
-        self.login_panel = LoginPanel(self, self.onLogin, self.toRegister)
-        self.register_panel = RegisterPanel(self, self.onRegister, self.toLogin)
+        self.login_panel = LoginPanel(self)
+        self.register_panel = RegisterPanel(self)
 
         self.panel_switcher = PanelsSwitcher(self, [self.login_panel, self.register_panel])
 

@@ -66,24 +66,41 @@ class AESCipher:
     """
     BLOCK_SIZE = 16
 
-    # AES 'pad' byte array to multiple of BLOCK_SIZE bytes
     @staticmethod
     def pad(byte_array):
+        """
+        Pads the given byte array with the required number of bytes to make its length a multiple of the AES block size.
+        :param byte_array: the byte array to pad
+        :type byte_array: bytes
+        :return: the padded byte array
+        :rtype: bytes
+        """
         pad_len = AESCipher.BLOCK_SIZE - len(byte_array) % AESCipher.BLOCK_SIZE
         return byte_array + (bytes([pad_len]) * pad_len)
 
-    # Remove padding at end of byte array
     @staticmethod
     def unpad(byte_array):
+        """
+        Removes the padding from the given byte array.
+        :param byte_array: the byte array to unpad
+        :type byte_array: bytes
+        :return: the unpadded byte array
+        :rtype: bytes
+        """
         last_byte = byte_array[-1]
         return byte_array[0:-last_byte]
 
     @staticmethod
     def encrypt(key, message):
         """
-        Input String, return base64 encoded encrypted String
+        Encrypts the given message using the specified key and returns the encrypted message in base64-encoded form.
+        :param key: the encryption key to use
+        :type key: str
+        :param message: the message to encrypt
+        :type message: str
+        :return: the base64-encoded encrypted message
+        :rtype: str
         """
-
         byte_array = message.encode("UTF-8")
 
         padded = AESCipher.pad(byte_array)
@@ -98,6 +115,15 @@ class AESCipher:
 
     @staticmethod
     def encrypt_file(key, contents: bytes):
+        """
+        Encrypts the given file contents using the specified key and returns the encrypted contents in base64-encoded form.
+        :param key: the encryption key to use
+        :type key: str
+        :param contents: the contents of the file to encrypt
+        :type contents: bytes
+        :return: the base64-encoded encrypted file contents
+        :rtype: bytes
+        """
         padded = AESCipher.pad(contents)
 
         # generate a random iv and prepend that to the encrypted result.
@@ -111,38 +137,66 @@ class AESCipher:
     @staticmethod
     def decrypt(key, message):
         """
-        Input encrypted bytes, return decrypted bytes, using iv and key
+        Decrypts a given message using the provided key.
+
+        :param key: The key used to decrypt the message.
+        :type key: str
+        :param message: The message to be decrypted.
+        :type message: str
+        :return: The decrypted message.
+        :rtype: str
         """
+
         byte_array = base64.b64decode(message)
 
-        iv = byte_array[0:16]  # extract the 16-byte initialization vector
+        # extract the 16-byte initialization vector from the byte array
+        iv = byte_array[0:16]
 
-        messagebytes = byte_array[16:]  # encrypted message is the bit after the iv
+        # encrypted message is the bit after the iv
+        messagebytes = byte_array[16:]
 
+        # create a new AES cipher with the provided key and iv, in CBC mode
         cipher = AES.new(key.encode("UTF-8"), AES.MODE_CBC, iv)
 
+        # decrypt the message bytes
         decrypted_padded = cipher.decrypt(messagebytes)
 
+        # unpad the decrypted message
         decrypted = AESCipher.unpad(decrypted_padded)
 
+        # return the decrypted message as a string
         return decrypted.decode("UTF-8")
 
     @staticmethod
     def decrypt_file(key, contents: bytes):
         """
-        Input encrypted bytes, return decrypted bytes, using iv and key
+        Decrypts the contents of a file using the provided key.
+
+        :param key: The key used to decrypt the file.
+        :type key: str
+        :param contents: The contents of the encrypted file.
+        :type contents: bytes
+        :return: The decrypted contents of the file.
+        :rtype: bytes
         """
         contents = base64.b64decode(contents)
-        iv = contents[0:16]  # extract the 16-byte initialization vector
 
-        messagebytes = contents[16:]  # encrypted message is the bit after the iv
+        # extract the 16-byte initialization vector from the byte array
+        iv = contents[0:16]
 
+        # encrypted message is the bit after the iv
+        messagebytes = contents[16:]
+
+        # create a new AES cipher with the provided key and iv, in CBC mode
         cipher = AES.new(key.encode("UTF-8"), AES.MODE_CBC, iv)
 
+        # decrypt the message bytes
         decrypted_padded = cipher.decrypt(messagebytes)
 
+        # unpad the decrypted message
         decrypted = AESCipher.unpad(decrypted_padded)
 
+        # return the decrypted contents of the file as bytes
         return decrypted
 
     @staticmethod
@@ -152,6 +206,7 @@ class AESCipher:
         :return: A random 32 bytes combination
         """
         return hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+
 
 if __name__ == '__main__':
     # # Test aes
