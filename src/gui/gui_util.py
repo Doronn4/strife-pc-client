@@ -5,7 +5,7 @@ import wx
 from typing import List
 from wx.lib.scrolledpanel import ScrolledPanel
 from pubsub import pub
-import main_gui
+import src.gui.main_gui as main_gui
 from src.handlers.file_handler import FileHandler
 from src.core.keys_manager import KeysManager
 from src.core.cryptions import AESCipher

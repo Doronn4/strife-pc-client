@@ -1,6 +1,6 @@
 import os
 
-import gui_util
+import src.gui.gui_util as gui_util
 from src.core.client_protocol import Protocol
 import wx
 from src.gui.gui_util import PanelsSwitcher

@@ -28,7 +28,8 @@ class Protocol:
         'request_group_members': 16,
         'request_user_picture': 17,
         'request_user_status': 18,
-        'request_chats': 19
+        'request_chats': 19,
+        'accept_friend': 20
     }
     chat_opcodes = {
         'text_message': 1,
@@ -110,6 +111,15 @@ class Protocol:
         opcode = Protocol.general_opcodes['add_friend']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
+        # Return the message after protocol
+        return msg
+
+    @staticmethod
+    def accept_friend_request(friend_username):
+        # Get the opcode of accept friend
+        opcode = Protocol.general_opcodes['accept_friend']
+        # Construct the message
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{friend_username}"
         # Return the message after protocol
         return msg
 

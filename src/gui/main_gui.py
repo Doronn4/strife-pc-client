@@ -1,8 +1,8 @@
 import sys
 
 import wx
-import gui_util
-import login_gui
+import src.gui.gui_util as gui_util
+import src.gui.login_gui as login_gui
 from src.core.client_protocol import Protocol
 from pubsub import pub
 import wx.lib.mixins.inspection
@@ -113,6 +113,8 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onAddFriendAnswer, 'friend_answer')
         pub.subscribe(self.onUserPic, 'user_pic')
         pub.subscribe(self.onChatsList, 'chats_list')
+        pub.subscribe(self.onFriendAdded, 'friend_added')
+        pub.subscribe(self.onFriendRequest, 'friend_request')
         self.load_friends()
 
     def onUserPic(self, contents, username):
@@ -131,10 +133,13 @@ class MainPanel(wx.Panel):
                 usernames = chat_name.split('%%')[1]
                 # Get the name of the other user (the friend)
                 other_username = usernames[0] if usernames[0] != gui_util.User.this_user.username else usernames[1]
-                # Create a new user object for the friend
-                user = gui_util.User(username=other_username, chat_id=chat_id)
-                # Add the user to the list of known users
-                MainPanel.known_users.append(user)
+                user = MainPanel.get_user_by_name(other_username)
+                if not user:
+                    # Create a new user object for the friend
+                    user = gui_util.User(username=other_username, chat_id=chat_id)
+                    # Add the user to the list of known users
+                    MainPanel.known_users.append(user)
+
                 # Add the user to the list of friends
                 MainPanel.my_friends.append(user)
                 # Add the friend user to the friends panel
@@ -188,7 +193,16 @@ class MainPanel(wx.Panel):
                 self.parent.general_com.send_data(msg)
 
     def onFriendAdded(self, friend_username):
-        pass
+        # Request chats list from the server
+        msg = Protocol.request_chats()
+        self.parent.general_com.send_data(msg)
+        # Create a notification for the user
+        notification = wx.adv.NotificationMessage('New friend added!', f'you are now friends with {friend_username}', self, wx.ICON_INFORMATION)
+        notification.Show()
+
+    def onFriendRequest(self, adder_username):
+        notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}', self, wx.ICON_INFORMATION)
+        notification.Show()
 
     def onChatSelect(self, chat_id: int):
         """
