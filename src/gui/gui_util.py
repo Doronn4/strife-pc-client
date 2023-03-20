@@ -102,7 +102,7 @@ class User:
 
 
 class UserBox(wx.Panel):
-    def __init__(self, parent, user: User, align_right=False, onClick=None):
+    def __init__(self, parent, user: User, align_right=False, onClick=None, pic_size=6):
         """
         Initializes the UserBox object.
 
@@ -118,7 +118,7 @@ class UserBox(wx.Panel):
         super(UserBox, self).__init__(parent)
 
         # Define the relative size of the profile picture
-        self.RELATIVE_PIC_SIZE = 0.04
+        self.RELATIVE_PIC_SIZE = 0.04 * pic_size/6
 
         # Store the parent and user objects
         self.parent = parent
@@ -143,12 +143,12 @@ class UserBox(wx.Panel):
         # Add the username to the vertical sizer
         username_text = wx.StaticText(self, label=self.user.username)
         username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(username_text, 0, wx.EXPAND)
+        self.vsizer.Add(username_text, 0, wx.ALIGN_CENTER)
 
         # Add the status to the vertical sizer
         status_text = wx.StaticText(self, label=self.user.status)
         status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(status_text, 0, wx.EXPAND)
+        self.vsizer.Add(status_text, 0, wx.ALIGN_CENTER)
 
         if align_right:
             # Add the vertical sizer to the horizontal sizer
@@ -164,6 +164,7 @@ class UserBox(wx.Panel):
             self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
             self.static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
             self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
+            print(self.static_pic)
 
         else:
             # Add the user profile picture to the horizontal sizer
@@ -998,32 +999,42 @@ class FriendRequestsPanel(ScrolledPanel):
         self.friend_requests = []
 
     def add_friend_request(self, adder: User):
-        adder_box = UserBox(self, user=adder)
-        add_button = wx.Button(self, 1, 'approve')
+        adder_box = UserBox(self, user=adder, pic_size=5)
+        add_button = wx.Button(self, label='approve', name=adder.username)
         add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
-        reject_button = wx.Button(self, 1, 'reject')
-        add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
+        reject_button = wx.Button(self, label='reject', name=adder.username)
+        reject_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
+        buttons_sizer = wx.BoxSizer(wx.VERTICAL)
+        buttons_sizer.Add(add_button, 0, wx.EXPAND)
+        buttons_sizer.Add(reject_button, 0, wx.EXPAND)
+
         request_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        request_sizer.Add(adder_box, 3, wx.EXPAND)
-        request_sizer.Add(add_button, 1, wx.EXPAND)
-        request_sizer.Add(reject_button, 1, wx.EXPAND)
-        self.sizer.Add(req/uest_sizer)
+        request_sizer.Add(adder_box, 0, wx.ALIGN_LEFT)
+        request_sizer.AddSpacer(10)
+        request_sizer.Add(buttons_sizer, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        self.sizer.Add(request_sizer)
         self.friend_requests.append(adder)
         self.SetupScrolling()
         self.Refresh()
         self.Layout()
 
     def onRequestClick(self, event):
-        username = event.GetId()
-        label = event.GetEventObject.GetLabel()
+        username = event.GetEventObject().GetName()
+        label = event.GetEventObject().GetLabel()
         approved = label == 'approve'
         index = -1
         for adder in self.friend_requests:
             if adder.username == username:
                 index = self.friend_requests.index(adder)
+                print(index)
                 self.friend_requests.remove(adder)
                 break
-        self.sizer.Remove(index)
+        if index != -1:
+            self.sizer.Remove(index)
+            print('removed from sizer now size is',self.sizer.GetItemCount())
+            self.Refresh()
+            self.Layout()
+            self.SetupScrolling()
         print('friend request from', username, label)
         # TODO: send the accept msg
 
