@@ -5,3 +5,5 @@ src/__pycache__/*
 __pycache__/*
 files/*
 __pycache__/
+keys/*
+files/*

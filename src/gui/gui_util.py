@@ -999,16 +999,19 @@ class FriendRequestsPanel(ScrolledPanel):
 
     def add_friend_request(self, adder: User):
         adder_box = UserBox(self, user=adder)
-        add_button = wx.Button(label='approve', id=adder.username)
+        add_button = wx.Button(self, 1, 'approve')
         add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
-        reject_button = wx.Button(label='reject', id=adder.username)
+        reject_button = wx.Button(self, 1, 'reject')
         add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
         request_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        request_sizer.Add(adder_box, 1, wx.EXPAND)
+        request_sizer.Add(adder_box, 3, wx.EXPAND)
         request_sizer.Add(add_button, 1, wx.EXPAND)
         request_sizer.Add(reject_button, 1, wx.EXPAND)
-        self.sizer.Add(request_sizer)
+        self.sizer.Add(req/uest_sizer)
         self.friend_requests.append(adder)
+        self.SetupScrolling()
+        self.Refresh()
+        self.Layout()
 
     def onRequestClick(self, event):
         username = event.GetId()

@@ -38,7 +38,7 @@ def handle_friend_add_answer(message):
 
 def handle_friend_request(message):
     sender_username = message['sender_username']
-    wx.CallAfter(pub.sendMessage, 'friend_request', sender_username=sender_username)
+    wx.CallAfter(pub.sendMessage, 'friend_request', adder_username=sender_username)
 
 
 def handle_text_message(message):
