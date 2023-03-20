@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 from src.core.client_com import ClientCom
 from src.core.client_protocol import Protocol
