@@ -1,6 +1,7 @@
 import sys
 
 import wx
+import wx.adv
 import src.gui.gui_util as gui_util
 import src.gui.login_gui as login_gui
 from src.core.client_protocol import Protocol
@@ -61,7 +62,7 @@ class MainPanel(wx.Panel):
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
         self.logout_button = wx.BitmapButton(self, bitmap=image_bitmap)
-        # TODO: bind to a function
+        self.logout_button.Bind(wx.EVT_BUTTON, self.onLogout)
 
         # Settings button
         image_bitmap = self.SETTINGS_BUTTON_IMAGE.Scale(
@@ -197,11 +198,13 @@ class MainPanel(wx.Panel):
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
         # Create a notification for the user
-        notification = wx.adv.NotificationMessage('New friend added!', f'you are now friends with {friend_username}', self, wx.ICON_INFORMATION)
+        notification = wx.adv.NotificationMessage('New friend added!', f'you are now friends with {friend_username}',
+                                                  self, wx.ICON_INFORMATION)
         notification.Show()
 
     def onFriendRequest(self, adder_username):
-        notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}', self, wx.ICON_INFORMATION)
+        notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}',
+                                                  self, wx.ICON_INFORMATION)
         notification.Show()
 
     def onChatSelect(self, chat_id: int):
@@ -285,7 +288,8 @@ class MainPanel(wx.Panel):
 
     def onLogout(self, event):
         # Handle logging out logic
-        pass
+        msg = Protocol.sig
+        # TODO: DO IT
 
     @staticmethod
     def get_user_by_name(username):

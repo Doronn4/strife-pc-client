@@ -34,7 +34,7 @@ class User:
         # Initialize the instance variables with the provided values.
         self.username = username
         self.status = status
-        self.pic = wx.Image('assets/strife_logo.png', wx.BITMAP_TYPE_ANY)
+        self.pic = wx.Image('assets/group_pic.png', wx.BITMAP_TYPE_ANY)
         self.video_frame = None
         self.last_update = 0
         self.MAX_TIMEOUT = 3
@@ -739,7 +739,10 @@ class MessagesPanel(ScrolledPanel):
         # Add the ChatMessage panel to the ChatPanel sizer
         self.sizer.Add(chat_message, 0, wx.EXPAND, border=5)
         self.sizer.AddSpacer(self.MESSAGES_GAP)
+
         self.Layout()
+        self.Refresh()
+        self.SetupScrolling()
 
 
 class ChatTools(wx.Panel):
@@ -788,11 +791,15 @@ class ChatTools(wx.Panel):
     def onMessageSend(self, event):
         raw_message = str(self.message_input.GetValue())
         if raw_message != '':
-            chat_key = KeysManager.get_chat_key(self.chat_id)
-            encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
-            msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
-            self.parent.GetParent().parent.parent.chats_com.send_data(msg)
-            self.message_input.Clear()
+            try:
+                chat_key = KeysManager.get_chat_key(self.chat_id)
+            except Exception as e:
+                print('exceptionDDD', e)
+            else:
+                encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
+                msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
+                self.parent.GetParent().parent.parent.chats_com.send_data(msg)
+                self.message_input.Clear()
 
 
 class ChatMessage(wx.Panel):
@@ -865,11 +872,14 @@ class GroupsSwitcher(wx.BoxSizer):
         :return:
         :rtype:
         """
-        chat_key = KeysManager.get_chat_key(chat_id)
-        decrypted_message = AESCipher.decrypt(chat_key, raw_message)
-        sender_user = main_gui.MainPanel.get_user_by_name(sender)
-        print('adding msg', decrypted_message)
-        self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
+        try:
+            chat_key = KeysManager.get_chat_key(chat_id)
+        except Exception:
+            pass
+        else:
+            decrypted_message = AESCipher.decrypt(chat_key, raw_message)
+            sender_user = main_gui.MainPanel.get_user_by_name(sender)
+            self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
 
     def add_group(self, group_id, users: List[User]):
         """

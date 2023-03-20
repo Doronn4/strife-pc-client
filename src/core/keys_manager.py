@@ -2,7 +2,7 @@ import hashlib
 import os
 
 import rsa
-from cryptions import AESCipher, RSACipher
+from src.core.cryptions import AESCipher, RSACipher
 
 
 class KeysManager:
@@ -128,6 +128,7 @@ class KeysManager:
         :rtype: None
         """
         KeysManager.chats_keys[chat_id] = key
+        KeysManager.save_keys()
 
 
 if __name__ == '__main__':

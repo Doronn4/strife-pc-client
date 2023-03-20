@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 from src.core.client_com import ClientCom
 from src.core.client_protocol import Protocol
@@ -29,7 +28,6 @@ def handle_added_to_group(message):
     chat_id = message['chat_id']
     group_key = message['group_key']
     KeysManager.add_key(chat_id, group_key)
-    print('adding key')
     wx.CallAfter(pub.sendMessage, 'added_to_group', group_name=group_name, chat_id=chat_id)
 
 
@@ -38,8 +36,12 @@ def handle_friend_add_answer(message):
     wx.CallAfter(pub.sendMessage, 'friend_answer', is_valid=is_valid)
 
 
+def handle_friend_request(message):
+    sender_username = message['sender_username']
+    wx.CallAfter(pub.sendMessage, 'friend_request', sender_username=sender_username)
+
+
 def handle_text_message(message):
-    print('onhandle')
     sender = message['sender']
     chat_id = message['chat_id']
     raw_message = message['message']
@@ -53,7 +55,13 @@ def handle_user_pic(message, file_contents):
 
 def update_chats(message):
     chats_names = message['chats_names']
+    if type(chats_names) != list:
+        chats_names = [chats_names]
+
     chats_ids = message['chats_ids']
+    if type(chats_ids) != list:
+        chats_ids = [chats_ids]
+
     chats = zip(chats_ids, chats_names)
     wx.CallAfter(pub.sendMessage, 'chats_list', chats=chats)
 
@@ -65,7 +73,7 @@ approve_reject_dict = {
 }
 
 general_dict = {
-    # 'friend_request': friend_request_received,
+    'friend_request': handle_friend_request,
     'added_to_group': handle_added_to_group,
     'chats_list': update_chats,
     # 'group_members': update_group_members,
@@ -154,11 +162,11 @@ def main():
     threading.Thread(target=handle_general_messages, args=(general_com, general_queue,)).start()
 
     chats_queue = queue.Queue()
-    chats_com = ClientCom(2000, config.server_ip, chats_queue)
+    chats_com = ClientCom(2000, config.server_ip, chats_queue, com_type='chats')
     threading.Thread(target=handle_chats_messages, args=(chats_com, chats_queue,)).start()
 
     files_queue = queue.Queue()
-    files_com = ClientCom(3000, config.server_ip, files_queue)
+    files_com = ClientCom(3000, config.server_ip, files_queue, com_type='files')
     threading.Thread(target=handle_files_messages, args=(files_com, files_queue,)).start()
 
     # Wait for the connection to the server
