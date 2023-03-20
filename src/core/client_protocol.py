@@ -115,11 +115,11 @@ class Protocol:
         return msg
 
     @staticmethod
-    def accept_friend_request(friend_username):
+    def accept_friend_request(friend_username, is_accepted: bool):
         # Get the opcode of accept friend
         opcode = Protocol.general_opcodes['accept_friend']
         # Construct the message
-        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{friend_username}"
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{friend_username}{Protocol.FIELD_SEPARATOR}{is_accepted}"
         # Return the message after protocol
         return msg
 

@@ -90,12 +90,15 @@ class MainPanel(wx.Panel):
         # Widgets
         self.friends_panel = gui_util.UsersScrollPanel(self, on_click=self.onChatSelect)
 
+        self.friend_requests_panel = gui_util.FriendRequestsPanel(self)
+
         self.create_group_button = wx.Button(self, label='Create new group')
         font = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.create_group_button.SetFont(font)
         self.create_group_button.Bind(wx.EVT_BUTTON, self.onGroupCreateButton)
 
         self.left_bar_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.left_bar_sizer.Add(self.friend_requests_panel, 2, wx.EXPAND)
         self.left_bar_sizer.Add(self.friends_panel, 6, wx.EXPAND)
         self.left_bar_sizer.Add(self.create_group_button, 1, wx.EXPAND)
 
@@ -203,6 +206,7 @@ class MainPanel(wx.Panel):
         notification.Show()
 
     def onFriendRequest(self, adder_username):
+        self.friend_requests_panel.add_friend_request(MainPanel.get_user_by_name(adder_username))
         notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}',
                                                   self, wx.ICON_INFORMATION)
         notification.Show()
@@ -288,7 +292,7 @@ class MainPanel(wx.Panel):
 
     def onLogout(self, event):
         # Handle logging out logic
-        msg = Protocol.sig
+        pass
         # TODO: DO IT
 
     @staticmethod

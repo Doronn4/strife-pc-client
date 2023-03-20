@@ -989,6 +989,42 @@ class GroupsPanel(wx.Panel):
         self.SetSizer(self.sizer)
 
 
+class FriendRequestsPanel(ScrolledPanel):
+    def __init__(self, parent):
+        super(FriendRequestsPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
+        self.SetupScrolling()
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.sizer)
+        self.friend_requests = []
+
+    def add_friend_request(self, adder: User):
+        adder_box = UserBox(self, user=adder)
+        add_button = wx.Button(label='approve', id=adder.username)
+        add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
+        reject_button = wx.Button(label='reject', id=adder.username)
+        add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
+        request_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        request_sizer.Add(adder_box, 1, wx.EXPAND)
+        request_sizer.Add(add_button, 1, wx.EXPAND)
+        request_sizer.Add(reject_button, 1, wx.EXPAND)
+        self.sizer.Add(request_sizer)
+        self.friend_requests.append(adder)
+
+    def onRequestClick(self, event):
+        username = event.GetId()
+        label = event.GetEventObject.GetLabel()
+        approved = label == 'approve'
+        index = -1
+        for adder in self.friend_requests:
+            if adder.username == username:
+                index = self.friend_requests.index(adder)
+                self.friend_requests.remove(adder)
+                break
+        self.sizer.Remove(index)
+        print('friend request from', username, label)
+        # TODO: send the accept msg
+
+
 class CreateGroupDialog(wx.Dialog):
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, title="Create New Group")
