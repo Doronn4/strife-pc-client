@@ -69,7 +69,7 @@ class Protocol:
     # Parameters of every message from the server (server -> client)
     s_opcodes_params = {
         'approve_reject': ('is_approved', 'function_opcode'),
-        'friend_request': ('sender_username',),
+        'friend_request': ('sender_username', 'is_silent'),
         'added_to_group': ('group_name', 'chat_id', 'group_key'),
         'voice_call_started': ('chat_id',),
         'video_call_started': ('chat_id',),
@@ -80,7 +80,7 @@ class Protocol:
         'chats_list': ('chats_names', 'chats_ids'),
         'group_members': ('chat_ids', 'usernames'),
         'user_status': ('username', 'status'),
-        'friend_added': ('friend_username',),
+        'friend_added': ('friend_username', 'friends_key', 'chat_id',),
         'text_message': ('chat_id', 'sender', 'message'),
         'file_description': ('file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_hash', 'file_contents'),
@@ -234,7 +234,7 @@ class Protocol:
     @staticmethod
     def add_member_to_group(chat_id, username, group_key):
         # Get the opcode of add_member_to_group
-        opcode = Protocol.general_opcodes['add_member_to_group']
+        opcode = Protocol.general_opcodes['add_group_member']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{group_key} "
         # Return the message after protocol

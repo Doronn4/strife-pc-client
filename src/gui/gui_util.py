@@ -59,7 +59,10 @@ class User:
         # Call each function in the call_on_update list.
         # This list is used to update the user's profile picture when it changes.
         for func in self.call_on_update:
-            func()
+            try:
+                func()
+            except Exception:
+                self.call_on_update.remove(func)
 
     def add_func_on_update(self, func):
         """
@@ -164,7 +167,6 @@ class UserBox(wx.Panel):
             self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
             self.static_pic.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
             self.sizer.Add(self.static_pic, 0, wx.ALIGN_CENTER)
-            print(self.static_pic)
 
         else:
             # Add the user profile picture to the horizontal sizer
@@ -395,16 +397,23 @@ class UsersScrollPanel(ScrolledPanel):
         """
         index = -1
         for i in range(len(self.users)):
-            if self.users[i].username == username:
+            if self.users[i].user.username == username:
                 index = i
                 break
 
         if index != -1:
             self.sizer.Remove(index)
+            del self.users[index]
 
         self.Refresh()  # updates the panel
         self.Layout()  # updates the layout of the panel
         self.SetupScrolling()  # enables scrolling in the panel
+
+    def reset_friends(self):
+
+        for user in self.users.copy():
+            self.remove_user(user.user.username)
+        self.users = []
 
     def handle_click(self, chat_id):
         """
@@ -795,7 +804,7 @@ class ChatTools(wx.Panel):
             try:
                 chat_key = KeysManager.get_chat_key(self.chat_id)
             except Exception as e:
-                print('exceptionDDD', e)
+                pass
             else:
                 encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
                 msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
@@ -961,6 +970,12 @@ class GroupsSwitcher(wx.BoxSizer):
         """
         self.groups[group_id][1].add_user(new_member)
 
+    def reset_groups(self):
+        for i in range(len(self.groups_panels.keys())):
+            self.Remove(0)
+        self.groups_panels = {}
+        self.groups = {}
+
     def Show(self, chat_id):
         """
 
@@ -993,6 +1008,7 @@ class GroupsPanel(wx.Panel):
 class FriendRequestsPanel(ScrolledPanel):
     def __init__(self, parent):
         super(FriendRequestsPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
+        self.parent = parent
         self.SetupScrolling()
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -1026,17 +1042,18 @@ class FriendRequestsPanel(ScrolledPanel):
         for adder in self.friend_requests:
             if adder.username == username:
                 index = self.friend_requests.index(adder)
-                print(index)
                 self.friend_requests.remove(adder)
                 break
         if index != -1:
+            sizer = self.sizer.GetItem(index)
+            sizer.DeleteWindows()
             self.sizer.Remove(index)
-            print('removed from sizer now size is',self.sizer.GetItemCount())
-            self.Refresh()
             self.Layout()
             self.SetupScrolling()
-        print('friend request from', username, label)
-        # TODO: send the accept msg
+
+        # Send the friend request approve/reject message
+        msg = Protocol.accept_friend_request(username, approved)
+        self.parent.parent.general_com.send_data(msg)
 
 
 class CreateGroupDialog(wx.Dialog):

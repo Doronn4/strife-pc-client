@@ -39,7 +39,8 @@ def handle_friend_add_answer(message):
 
 def handle_friend_request(message):
     sender_username = message['sender_username']
-    wx.CallAfter(pub.sendMessage, 'friend_request', adder_username=sender_username)
+    is_silent = message['is_silent']
+    wx.CallAfter(pub.sendMessage, 'friend_request', adder_username=sender_username, is_silent=is_silent)
 
 
 def handle_text_message(message):
@@ -53,6 +54,13 @@ def handle_user_pic(message):
     username = message['pfp_username']
     contents = base64.b64decode(message['image_contents'])
     wx.CallAfter(pub.sendMessage, 'user_pic', contents=contents, username=username)
+
+
+def handle_friend_added(message):
+    friend_username = message['friend_username']
+    friends_key = message['friends_key']
+    chat_id = message['chat_id']
+    wx.CallAfter(pub.sendMessage, 'friend_added', friend_username=friend_username, friends_key=friends_key, chat_id=chat_id)
 
 
 def update_chats(message):
@@ -80,7 +88,7 @@ general_dict = {
     'chats_list': update_chats,
     # 'group_members': update_group_members,
     # 'user_status': update_user_status,
-    # 'friend_added': friend_added,
+    'friend_added': handle_friend_added
     # 'text_message': text_message,
     # 'file_description': file_desc,
     # 'file_in_chat': file_received,
