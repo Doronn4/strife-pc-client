@@ -76,40 +76,6 @@ class ClientCom:
         except Exception:
             raise self.CONNECTION_EXCEPTION
 
-    def recv_large(self, size: int):
-        """
-        Receives a large sized data object (For example a picture).
-
-        :param size: The size of the data to receive.
-        :type size: int
-        :returns: The received data as a bytearray.
-        :raises: NOT_RUNNING_EXCEPTION if client com is not running
-        """
-        # Check if the client com is running
-        if not self.running:
-            raise self.NOT_RUNNING_EXCEPTION
-
-        # Initialize an empty bytearray to store the file data
-        file_data = bytearray()
-
-        # Keep receiving data until the entire file has been received
-        while len(file_data) < size:
-            try:
-                chunk = self.socket.recv(self.CHUNK_SIZE)
-            # Handle exceptions
-            except socket.error:
-                file_data = None
-                self.close()
-                break
-
-            # Check if there was anything received
-            if not chunk:
-                break
-
-            file_data += chunk
-
-        return file_data
-
     def _main_loop(self):
         """
         The main loop which receives data from the server and puts it in a queue
@@ -154,10 +120,7 @@ class ClientCom:
                 self.running = False
             else:
                 try:
-                    if self.com_type == 'files':
-                        dec_data = AESCipher.decrypt_file(self.aes_key, data)  # Decrypt file data
-                    else:
-                        dec_data = AESCipher.decrypt(self.aes_key, data)  # Decrypt regular data
+                    dec_data = AESCipher.decrypt(self.aes_key, data)
                 except Exception:
                     pass
                 else:

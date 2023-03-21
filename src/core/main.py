@@ -11,6 +11,7 @@ from pubsub import pub
 from src.gui.main_gui import MainFrame
 import wx.lib.inspection
 from src.handlers.file_handler import FileHandler
+import base64
 
 
 def handle_register_ans(message):
@@ -48,9 +49,10 @@ def handle_text_message(message):
     wx.CallAfter(pub.sendMessage, 'text_message', sender=sender, chat_id=chat_id, raw_message=raw_message)
 
 
-def handle_user_pic(message, file_contents):
+def handle_user_pic(message):
     username = message['pfp_username']
-    wx.CallAfter(pub.sendMessage, 'user_pic', contents=file_contents, username=username)
+    contents = base64.b64decode(message['image_contents'])
+    wx.CallAfter(pub.sendMessage, 'user_pic', contents=contents, username=username)
 
 
 def update_chats(message):
@@ -151,9 +153,8 @@ def handle_files_messages(com, q):
 
         # Check if the name of the operation is in the dict of functions
         elif message['opname'] in files_dict.keys() or True:
-            file_contents = q.get()
             # Call the function according to the operation
-            files_dict[message['opname']](message, file_contents)
+            files_dict[message['opname']](message)
 
 
 def main():

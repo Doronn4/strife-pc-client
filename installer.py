@@ -10,6 +10,6 @@ def install(package):
 
 
 if __name__ == '__main__':
-    install('cryptodomex')
+    install('pycryptodomex')
     install('wxpython')
     install('rsa')
