@@ -9,6 +9,7 @@ import src.gui.main_gui as main_gui
 from src.handlers.file_handler import FileHandler
 from src.core.keys_manager import KeysManager
 from src.core.cryptions import AESCipher
+import base64
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -447,6 +448,8 @@ class SettingsDialog(wx.Dialog):
         self.SetSize(size)
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
 
+        self.parent = parent
+
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.status_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -469,9 +472,10 @@ class SettingsDialog(wx.Dialog):
         self.pic_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.picture_sizer.Add(self.picture_label, 1, wx.ALIGN_CENTER)
         self.picture_sizer.AddSpacer(10)
-        self.picture_sizer.Add(self.file_picker, 1, wx.ALIGN_CENTER)
-        self.picture_sizer.AddSpacer(10)
         self.picture_sizer.Add(self.pic_submit_button, 1, wx.ALIGN_CENTER)
+        self.picture_sizer.AddSpacer(10)
+        self.picture_sizer.Add(self.file_picker, 1, wx.ALIGN_CENTER)
+        self.pic_submit_button.Bind(wx.EVT_BUTTON, self.onPicChange)
 
         self.status_label = wx.StaticText(self, label='Change status:')
         self.status_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
@@ -504,6 +508,16 @@ class SettingsDialog(wx.Dialog):
 
     def onBack(self, event):
         self.Close()
+
+    def onPicChange(self, event):
+        pic_path = self.file_picker.GetPath()
+        if pic_path == '':
+            wx.MessageBox('No file chosen', 'Error', wx.OK | wx.ICON_ERROR)
+        else:
+            pic_contents = FileHandler.load_file(pic_path)
+            b64_contents = base64.b64encode(pic_contents).decode()
+            msg = Protocol.change_pfp(b64_contents)
+            self.parent.parent.files_com.send_data(msg)
 
 
 class CallUserPanel(wx.Panel):
@@ -803,6 +817,7 @@ class ChatTools(wx.Panel):
         if raw_message != '':
             try:
                 chat_key = KeysManager.get_chat_key(self.chat_id)
+                print(chat_key, self.chat_id)
             except Exception as e:
                 pass
             else:
@@ -884,6 +899,7 @@ class GroupsSwitcher(wx.BoxSizer):
         """
         try:
             chat_key = KeysManager.get_chat_key(chat_id)
+            print(chat_id, chat_key)
         except Exception:
             pass
         else:

@@ -69,7 +69,10 @@ class ClientCom:
             enc_data = AESCipher.encrypt(self.aes_key, data).encode()
 
             # send data length
-            self.socket.send(str(len(enc_data)).zfill(4).encode())
+            str_len = str(len(enc_data)).zfill(10) if self.com_type == 'files' else\
+                str(len(enc_data)).zfill(4)
+
+            self.socket.send(str_len.encode())
 
             # Send the data
             self.socket.send(enc_data)

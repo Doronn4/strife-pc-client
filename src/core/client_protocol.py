@@ -164,7 +164,7 @@ class Protocol:
         # Get the opcode of change_pfp
         kind = Protocol.files_opcodes['profile_pic_change']
         # Construct the message
-        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(picture)}{Protocol.FIELD_SEPARATOR}{picture}"
+        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{picture}"
         # Return the message after protocol
         return msg
 

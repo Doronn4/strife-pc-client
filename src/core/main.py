@@ -189,9 +189,9 @@ def main():
     FileHandler.initialize(str(wd)+'\\files')
 
     app = wx.App()
-    main_frame = MainFrame(parent=None, title='Strife', general_com=general_com, chats_com=chats_com, files_com=files_com)
+    main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,
+                           chats_com=chats_com, files_com=files_com)
     main_frame.Show()
-    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
 

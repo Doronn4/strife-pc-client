@@ -1,3 +1,4 @@
+import os
 import sys
 
 import wx
@@ -298,7 +299,6 @@ class MainPanel(wx.Panel):
     def onLogout(self, event):
         # Handle logging out logic
         pass
-        # TODO: DO IT
 
     @staticmethod
     def get_user_by_name(username):
@@ -345,3 +345,8 @@ class MainFrame(wx.Frame):
         # TODO: add things
         KeysManager.save_keys()
         event.Skip()
+
+
+def restart_program():
+    python = sys.executable
+    os.execl(python, python, 'src/core/main.py')
