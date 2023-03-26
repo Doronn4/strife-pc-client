@@ -13,3 +13,4 @@ if __name__ == '__main__':
     install('pycryptodomex')
     install('wxpython')
     install('rsa')
+    install('pypubsub')

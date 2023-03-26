@@ -135,7 +135,6 @@ def handle_chats_messages(com, q):
         data = q.get()
         # Un-protocol the message from the server
         message = Protocol.unprotocol_msg("chat", data)
-        print(message)
 
         if message['opname'] == 'approve_reject':
             if message['function_opcode'] in approve_reject_dict.keys():

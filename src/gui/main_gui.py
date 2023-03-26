@@ -203,7 +203,7 @@ class MainPanel(wx.Panel):
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
 
-        KeysManager.add_key(chat_id, friends_key)
+        KeysManager.add_key(int(chat_id), friends_key)
 
         # Create a notification for the user
         notification = wx.adv.NotificationMessage('New friend added!', f'you are now friends with {friend_username}',

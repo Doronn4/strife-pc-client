@@ -972,7 +972,7 @@ class GroupsSwitcher(wx.BoxSizer):
                 # Construct a message to add the friend to the group
                 msg = Protocol.add_member_to_group(group_id, friend_username, group_key)
                 # Send the message to the server
-                self.parent.general_com.send_data(msg)
+                self.parent.parent.parent.general_com.send_data(msg)
 
     def add_group_member(self, group_id, new_member: User):
         """
