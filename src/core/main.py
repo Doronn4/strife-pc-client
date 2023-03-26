@@ -60,7 +60,8 @@ def handle_friend_added(message):
     friend_username = message['friend_username']
     friends_key = message['friends_key']
     chat_id = message['chat_id']
-    wx.CallAfter(pub.sendMessage, 'friend_added', friend_username=friend_username, friends_key=friends_key, chat_id=chat_id)
+    wx.CallAfter(pub.sendMessage, 'friend_added', friend_username=friend_username, friends_key=friends_key,
+                 chat_id=chat_id)
 
 
 def update_chats(message):
@@ -186,7 +187,7 @@ def main():
     wd = script_path.parent.parent.parent
     os.chdir(str(wd))
     KeysManager.initialize(str(wd) + '\\keys')
-    FileHandler.initialize(str(wd)+'\\files')
+    FileHandler.initialize(str(wd) + '\\files')
 
     app = wx.App()
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,

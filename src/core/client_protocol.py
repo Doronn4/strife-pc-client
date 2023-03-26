@@ -83,7 +83,7 @@ class Protocol:
         'friend_added': ('friend_username', 'friends_key', 'chat_id',),
         'text_message': ('chat_id', 'sender', 'message'),
         'file_description': ('file_name', 'file_size', 'file_hash'),
-        'file_in_chat': ('chat_id', 'file_name', 'file_hash', 'file_contents'),
+        'file_in_chat': ('chat_id', 'file_name', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents'),
         'chat_history': ('messages',)
     }
@@ -285,16 +285,15 @@ class Protocol:
         # Return the message after protocol
         return msg
 
-    @staticmethod
-    def send_image(chat_id, image_name, image):
-        # TODO: Check if hash is really needed to be send
-        # Get the opcode of send_image
-        kind = Protocol.files_opcodes['file_in_chat']
-        # Construct the message
-        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(image)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
-            f"{Protocol.FIELD_SEPARATOR}{image_name}{Protocol.FIELD_SEPARATOR}{image} "
-        # Return the message after protocol
-        return msg
+    # @staticmethod
+    # def send_image(chat_id, image_name, image):
+    #     # Get the opcode of send_image
+    #     kind = Protocol.files_opcodes['file_in_chat']
+    #     # Construct the message
+    #     msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(image)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
+    #         f"{Protocol.FIELD_SEPARATOR}{image_name}{Protocol.FIELD_SEPARATOR}{image} "
+    #     # Return the message after protocol
+    #     return msg
 
     @staticmethod
     def send_file(chat_id, file_name, file):
@@ -302,7 +301,7 @@ class Protocol:
         # Get the opcode of send_file
         kind = Protocol.files_opcodes['file_in_chat']
         # Construct the message
-        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(file)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
+        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{chat_id}" \
             f"{Protocol.FIELD_SEPARATOR}{file_name}{Protocol.FIELD_SEPARATOR}{file} "
         # Return the message after protocol
         return msg
@@ -313,7 +312,7 @@ class Protocol:
         Deconstructs a message received from the server with the client-server's protocol
         :param type: The type of the message (general, chat, file)
         :param raw_message: The message
-        :return: A dict with every parameter name as the key and it's value as the value
+        :return: A dict with every parameter name as the key, and it's value as the value
         """
         # Split the message into it's fields with the field separator
         values = raw_message.split(Protocol.FIELD_SEPARATOR)
