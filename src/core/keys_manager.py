@@ -95,7 +95,7 @@ class KeysManager:
             for line in contents.splitlines():
                 if len(line.split(':', 1)) == 2:
                     chat_id, key = line.split(':', 1)
-                    KeysManager.chats_keys[int(chat_id)] = key
+                    KeysManager.chats_keys[int(chat_id)] = key.strip()
 
         # Sets the last_password attribute to the given password.
         KeysManager.last_password = password

@@ -817,7 +817,6 @@ class ChatTools(wx.Panel):
         if raw_message != '':
             try:
                 chat_key = KeysManager.get_chat_key(self.chat_id)
-                print(chat_key, self.chat_id)
             except Exception as e:
                 pass
             else:
@@ -900,7 +899,6 @@ class GroupsSwitcher(wx.BoxSizer):
         """
         try:
             chat_key = KeysManager.get_chat_key(chat_id)
-            print(chat_id, chat_key)
         except Exception:
             pass
         else:
