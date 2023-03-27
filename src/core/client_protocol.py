@@ -236,7 +236,7 @@ class Protocol:
         # Get the opcode of add_member_to_group
         opcode = Protocol.general_opcodes['add_group_member']
         # Construct the message
-        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{group_key} "
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{group_key}"
         # Return the message after protocol
         return msg
 

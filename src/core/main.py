@@ -29,6 +29,7 @@ def handle_added_to_group(message):
     chat_id = message['chat_id']
     group_key = message['group_key']
     KeysManager.add_key(chat_id, group_key)
+    print(group_key, len(group_key))
     wx.CallAfter(pub.sendMessage, 'added_to_group', group_name=group_name, chat_id=chat_id)
 
 
