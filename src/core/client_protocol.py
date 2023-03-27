@@ -78,7 +78,7 @@ class Protocol:
         'voice_call_user_joined': ('chat_id', 'user_ip', 'username'),
         'video_call_user_joined': ('chat_id', 'user_ip', 'username'),
         'chats_list': ('chats_names', 'chats_ids'),
-        'group_members': ('chat_ids', 'usernames'),
+        'group_members': ('chat_id', 'usernames'),
         'user_status': ('username', 'status'),
         'friend_added': ('friend_username', 'friends_key', 'chat_id',),
         'text_message': ('chat_id', 'sender', 'message'),

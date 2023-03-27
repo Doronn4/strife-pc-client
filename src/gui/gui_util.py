@@ -884,6 +884,7 @@ class GroupsSwitcher(wx.BoxSizer):
                                                     [friend.username for friend in main_gui.MainPanel.my_friends])
 
         pub.subscribe(self.onTextMessage, 'text_message')
+        pub.subscribe(self.onGroupMembers, 'group_members')
 
     def onTextMessage(self, sender, chat_id, raw_message):
         """
@@ -906,6 +907,11 @@ class GroupsSwitcher(wx.BoxSizer):
             decrypted_message = AESCipher.decrypt(chat_key, raw_message)
             sender_user = main_gui.MainPanel.get_user_by_name(sender)
             self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
+
+    def onGroupMembers(self, chat_id, usernames):
+        for username in usernames:
+            user = main_gui.MainPanel.get_user_by_name(username)
+            self.add_group_member(chat_id, user)
 
     def add_group(self, group_id, users: List[User]):
         """

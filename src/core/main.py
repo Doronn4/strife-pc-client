@@ -77,6 +77,14 @@ def update_chats(message):
     wx.CallAfter(pub.sendMessage, 'chats_list', chats=chats)
 
 
+def update_group_members(message):
+    chat_id = message['chat_id']
+    usernames = message['usernames']
+    if type(usernames) != list:
+        usernames = [usernames]
+    wx.CallAfter(pub.sendMessage, 'group_members', chat_id=chat_id, usernames=usernames)
+
+
 approve_reject_dict = {
     1: handle_register_ans,
     2: handle_login_ans,
@@ -87,7 +95,7 @@ general_dict = {
     'friend_request': handle_friend_request,
     'added_to_group': handle_added_to_group,
     'chats_list': update_chats,
-    # 'group_members': update_group_members,
+    'group_members': update_group_members,
     # 'user_status': update_user_status,
     'friend_added': handle_friend_added
     # 'text_message': text_message,
