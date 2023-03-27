@@ -909,6 +909,7 @@ class GroupsSwitcher(wx.BoxSizer):
             self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
 
     def onGroupMembers(self, chat_id, usernames):
+        self.groups[chat_id][1].reset_friends()
         for username in usernames:
             user = main_gui.MainPanel.get_user_by_name(username)
             self.add_group_member(chat_id, user)
