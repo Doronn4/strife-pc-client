@@ -60,9 +60,11 @@ class VoiceCall:
             data = self.audio_input.read(self.CHUNK)
 
             # Encrypt the data using the call's symmetrical key
-            data = self.aes.encrypt(data, self.key)
-
-            for ip in self.call_members.keys():
+            data = self.aes.encrypt_bytes(self.key, data)
+            # The ips to send to
+            ips = list(self.call_members.keys())
+            # send the data to the ips
+            for ip in ips:
                 self.socket.sendto(data, (ip, self.PORT))
 
     def receive_audio(self):
@@ -70,7 +72,7 @@ class VoiceCall:
             data, addr = self.socket.recvfrom(self.CHUNK*2)
 
             # Decrypt the data using the call's symmetrical key
-            data = self.aes.decrypt(data, self.key)
+            data = self.aes.decrypt_bytes(self.key, data)
 
             ip = addr[0]
             self.call_members[ip].write(data)
@@ -78,3 +80,7 @@ class VoiceCall:
     def add_user(self, ip):
         self.call_members[ip] = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, output=True,
                                                 frames_per_buffer=self.CHUNK)
+
+    def remove_user(self, ip):
+        if ip in self.call_members.keys():
+            del self.call_members[ip]

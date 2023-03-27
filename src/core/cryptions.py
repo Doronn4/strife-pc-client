@@ -110,7 +110,7 @@ class AESCipher:
         return base64.b64encode(iv + encrypted).decode("UTF-8")
 
     @staticmethod
-    def encrypt_file(key, contents: bytes):
+    def encrypt_bytes(key, contents: bytes):
         """
         Encrypts the given file contents using the specified key and returns the encrypted contents in base64-encoded form.
         :param key: the encryption key to use
@@ -128,7 +128,7 @@ class AESCipher:
         cipher = AES.new(key.encode("UTF-8"), AES.MODE_CBC, iv)
         encrypted = cipher.encrypt(padded)
         # Note we PREPEND the unencrypted iv to the encrypted message
-        return base64.b64encode(iv + encrypted)
+        return iv + encrypted
 
     @staticmethod
     def decrypt(key, message):
@@ -164,7 +164,7 @@ class AESCipher:
         return decrypted.decode("UTF-8")
 
     @staticmethod
-    def decrypt_file(key, contents: bytes):
+    def decrypt_bytes(key, contents: bytes):
         """
         Decrypts the contents of a file using the provided key.
 
@@ -175,7 +175,6 @@ class AESCipher:
         :return: The decrypted contents of the file.
         :rtype: bytes
         """
-        contents = base64.b64decode(contents)
 
         # extract the 16-byte initialization vector from the byte array
         iv = contents[0:16]

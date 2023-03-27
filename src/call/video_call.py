@@ -8,7 +8,7 @@ from src.handlers.camera_handler import CameraHandler
 
 
 class VideoCall:
-    def __init__(self, chat_id: int, key: bytes):
+    def __init__(self, chat_id: int, key: str):
         """
         Creates a new VideoCall object to handle the video call
         :param chat_id: The chat id of the call
@@ -36,8 +36,7 @@ class VideoCall:
         self.key = key
 
         # Creates a UDP socket
-        self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.socket.bind(('0.0.0.0', self.PORT))
+        self.socket = None
 
     def send_video(self):
         while self.active:
@@ -47,9 +46,11 @@ class VideoCall:
                 # Compress the frame to jpg format
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
-                data = self.aes.encrypt(buffer.tobytes(), self.key)
-                # Send the image to all of the users in the call
-                for ip in self.ips_videos.keys():
+                data = self.aes.encrypt(self.key, buffer.tobytes())
+                # The ips to send to
+                ips = list(self.ips_videos.keys())
+                # Send the image to all the users in the call
+                for ip in ips:
                     self.socket.sendto(data, (ip, self.PORT))
                 # Sleep 1/FPS of a second to send only the desired frame rate
                 time.sleep((1/self.FPS))
@@ -60,7 +61,7 @@ class VideoCall:
             data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
 
             # Decrypt the data using the call's symmetrical key
-            data = self.aes.decrypt(data, self.key)
+            data = self.aes.decrypt_bytes(self.key, data)
 
             # Get the ip of the sender
             ip = addr[0]
@@ -70,11 +71,22 @@ class VideoCall:
             # Put the image/frame in the ips-videos dict
             self.ips_videos[ip] = frame
 
+    def add_user(self, ip):
+        if ip not in self.ips_videos.keys():
+            self.ips_videos[ip] = None
+
+    def remove_user(self, ip):
+        if ip in self.ips_videos.keys():
+            del self.ips_videos[ip]
+
     def toggle_video(self):
         self.transmit_video = not self.transmit_video
 
     def start(self):
         self.active = True
+        self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self.socket.bind(('0.0.0.0', self.PORT))
+
         threading.Thread(target=self.receive_videos).start()
         threading.Thread(target=self.send_video).start()
 

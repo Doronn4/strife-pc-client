@@ -39,7 +39,7 @@ def handle_friend_add_answer(message):
 
 def handle_friend_request(message):
     sender_username = message['sender_username']
-    is_silent = message['is_silent']
+    is_silent = bool(message['is_silent'])
     wx.CallAfter(pub.sendMessage, 'friend_request', adder_username=sender_username, is_silent=is_silent)
 
 
