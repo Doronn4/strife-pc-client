@@ -74,7 +74,7 @@ def update_chats(message):
     if type(chats_ids) != list:
         chats_ids = [chats_ids]
 
-    chats = zip(chats_ids, chats_names)
+    chats = [(chats_ids[i], chats_names[i]) for i in range(0, len(chats_ids))]
     wx.CallAfter(pub.sendMessage, 'chats_list', chats=chats)
 
 

@@ -136,6 +136,8 @@ class MainPanel(wx.Panel):
         self.friends_panel.reset_friends()
         self.groups_panel.sizer.reset_groups()
 
+        print('chats:', chats)
+
         for chat_id, chat_name in chats:
             if chat_name.startswith('PRIVATE') and len(chat_name.split('%%')) == 3:
                 # If it's a private chat
@@ -243,6 +245,7 @@ class MainPanel(wx.Panel):
         pass
 
     def onGroupJoin(self, group_name, chat_id):
+        print(f'joined {group_name} - {chat_id}')
         self.friends_panel.add_user(gui_util.User(username=group_name, chat_id=chat_id))
         self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
 
