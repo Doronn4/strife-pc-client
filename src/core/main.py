@@ -29,7 +29,6 @@ def handle_added_to_group(message):
     chat_id = message['chat_id']
     group_key = message['group_key']
     KeysManager.add_key(chat_id, group_key)
-    print(group_key, len(group_key))
     wx.CallAfter(pub.sendMessage, 'added_to_group', group_name=group_name, chat_id=chat_id)
 
 
@@ -86,6 +85,12 @@ def update_group_members(message):
     wx.CallAfter(pub.sendMessage, 'group_members', chat_id=chat_id, usernames=usernames)
 
 
+def update_user_status(message):
+    username = message['username']
+    status = message['status']
+    wx.CallAfter(pub.sendMessage, 'user_status', username=username, status=status)
+
+
 approve_reject_dict = {
     1: handle_register_ans,
     2: handle_login_ans,
@@ -97,12 +102,8 @@ general_dict = {
     'added_to_group': handle_added_to_group,
     'chats_list': update_chats,
     'group_members': update_group_members,
-    # 'user_status': update_user_status,
-    'friend_added': handle_friend_added
-    # 'text_message': text_message,
-    # 'file_description': file_desc,
-    # 'file_in_chat': file_received,
-    # 'user_profile_picture': update_user_pic
+    'user_status': update_user_status,
+    'friend_added': handle_friend_added,
 }
 
 chats_dict = {

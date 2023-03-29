@@ -65,6 +65,14 @@ class User:
             except Exception:
                 self.call_on_update.remove(func)
 
+    def update_status(self, status):
+        self.status = status
+        for func in self.call_on_update:
+            try:
+                func()
+            except Exception:
+                self.call_on_update.remove(func)
+
     def add_func_on_update(self, func):
         """
         This method adds a function to the call_on_update list.
@@ -129,7 +137,7 @@ class UserBox(wx.Panel):
         self.user = user
 
         # Add function to update the profile picture when it is changed
-        self.user.add_func_on_update(self.onPicUpdate)
+        self.user.add_func_on_update(self.onUpdate)
 
         # Store the onClick function
         self.onClick = onClick
@@ -145,14 +153,14 @@ class UserBox(wx.Panel):
         self.vsizer = wx.BoxSizer(wx.VERTICAL)
 
         # Add the username to the vertical sizer
-        username_text = wx.StaticText(self, label=self.user.username)
-        username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(username_text, 0, wx.ALIGN_CENTER)
+        self.username_text = wx.StaticText(self, label=self.user.username)
+        self.username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+        self.vsizer.Add(self.username_text, 0, wx.ALIGN_CENTER)
 
         # Add the status to the vertical sizer
-        status_text = wx.StaticText(self, label=self.user.status)
-        status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(status_text, 0, wx.ALIGN_CENTER)
+        self.status_text = wx.StaticText(self, label=self.user.status)
+        self.status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
+        self.vsizer.Add(self.status_text, 0, wx.ALIGN_CENTER)
 
         if align_right:
             # Add the vertical sizer to the horizontal sizer
@@ -197,7 +205,7 @@ class UserBox(wx.Panel):
         if self.onClick:
             self.onClick(self.user.chat_id)
 
-    def onPicUpdate(self):
+    def onUpdate(self):
         """
         Updates the user profile picture displayed on the UserBox panel.
 
@@ -211,7 +219,11 @@ class UserBox(wx.Panel):
         bitmap = wx.Bitmap(pic)
         # Set the bitmap as the profile picture displayed on the panel
         self.static_pic.SetBitmap(bitmap)
-        # Refresh the panel to show the updated profile picture
+        # Update the status
+        self.status_text.SetLabel(self.user.status)
+        # Update the username
+        self.username_text.SetLabel(self.user.username)
+        # Refresh the panel to show the updated user
         self.Refresh()
 
 
