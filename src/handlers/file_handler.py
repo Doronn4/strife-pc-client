@@ -25,7 +25,7 @@ class FileHandler:
             os.mkdir(FileHandler.base_path+FileHandler.PFPS_PATH)
 
     @staticmethod
-    def save_file(contents: bytes, path, file_name: str):
+    def save_file(contents: bytes, path):
         """
         This method saves a file to the specified path.
 
@@ -38,7 +38,7 @@ class FileHandler:
         :return: None
         :rtype: None
         """
-        with open(f'{path}\\{file_name}', 'wb') as f:
+        with open(path, 'wb') as f:
             f.write(contents)
 
     @staticmethod

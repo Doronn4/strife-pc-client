@@ -121,8 +121,10 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onFriendAdded, 'friend_added')
         pub.subscribe(self.onFriendRequest, 'friend_request')
         pub.subscribe(self.onUserStatus, 'user_status')
+        pub.subscribe(self.onVoiceStart, 'voice_started')
+        pub.subscribe(self.onVideoStart, 'video_started')
         self.load_friends()
-
+    
     def onUserPic(self, contents, username):
         if username == gui_util.User.this_user.username:
             path = FileHandler.save_pfp(contents, username)
@@ -172,6 +174,10 @@ class MainPanel(wx.Panel):
                 # Send a message to the server requesting a list of the group's members
                 msg = Protocol.request_group_members(chat_id)
                 self.parent.general_com.send_data(msg)
+
+            # Request every chat's messages history
+            msg = Protocol.get_chat_history(chat_id)
+            self.parent.general_com.send_data(msg)
 
     def load_friends(self):
         # Request the list of chats
@@ -278,35 +284,49 @@ class MainPanel(wx.Panel):
                 # Send the message to the server
                 self.parent.general_com.send_data(msg)
 
-    def onVoice(self, event):
-        # TODO: handle logic etc....
-
-        title = 'ifath fans'  # temp
-
+    def onVoiceStart(self, chat_id):
+        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
         self.voice_call_window = gui_util.CallWindow(self, title)
-
-        # temp
-        for i in range(4):
-            self.voice_call_window.call_grid.add_user(gui_util.User('doron'+str(i)))
-        # ----
+        self.voice_call_window.call_grid.add_user(gui_util.User.this_user)
         self.voice_call_window.Show()
 
-    def onVideo(self, event):
-        # TODO: handle logic etc....
-
-        title = 'ifath fans'  # temp
-
+    def onVideoStart(self, chat_id):
+        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
         self.video_call_window = gui_util.CallWindow(self, title, video=True)
-
-        # temp
-        for i in range(4):
-            self.video_call_window.call_grid.add_user(gui_util.User('doron'+str(i)))
-        # ----
+        self.video_call_window.call_grid.add_user(gui_util.User.this_user)
         self.video_call_window.Show()
+
+    def onVoice(self, event):
+        msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
+        self.parent.general_com.send_data(msg)
+
+    def onVideo(self, event):
+        msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
+        self.parent.general_com.send_data(msg)
 
     def onLogout(self, event):
         # Handle logging out logic
-        pass
+        # Send a logout message to the server
+        #msg = Protocol.sign_out(gui_util.User.this_user.username)
+        #self.parent.general_com.send_data(msg)
+
+        # Clear the current user
+        gui_util.User.this_user = None
+
+        # Close all sub-windows
+        if self.voice_call_window:
+            self.voice_call_window.Close()
+        if self.video_call_window:
+            self.video_call_window.Close()
+        if self.group_creation_window:
+            self.group_creation_window.Close()
+        if self.add_friend_window:
+            self.add_friend_window.Close()
+        if self.settings_window:
+            self.settings_window.Close()
+
+        # Move back to the login panel
+        self.parent.panel_switcher.Show(self.parent.login_panel)
 
     @staticmethod
     def get_user_by_name(username):
@@ -320,6 +340,16 @@ class MainPanel(wx.Panel):
             MainPanel.known_users.append(user_found)
 
         return user_found
+    
+    @staticmethod
+    def get_name_by_id(id):
+        name = ''
+        for user in MainPanel.known_users:
+            if user.chat_id == id:
+                name = user.username
+                break
+
+        return name
 
 
 class MainFrame(wx.Frame):

@@ -1,17 +1,24 @@
 import os
 from pathlib import Path
-from src.core.client_com import ClientCom
-from src.core.client_protocol import Protocol
 import threading
 import queue
-from src.core.keys_manager import KeysManager
-import config
 import wx
 from pubsub import pub
-from src.gui.main_gui import MainFrame
 import wx.lib.inspection
-from src.handlers.file_handler import FileHandler
 import base64
+import sys
+
+# Add the project folder to PYTHONPATH
+project_dir = str(Path(os.path.abspath(__file__)).parent.parent.parent)
+sys.path.insert(0, project_dir)
+
+from src.core.cryptions import AESCipher
+from src.core.client_com import ClientCom
+from src.core.client_protocol import Protocol
+from src.core.keys_manager import KeysManager
+from src.handlers.file_handler import FileHandler
+from src.gui.main_gui import MainFrame
+import config
 
 
 def handle_register_ans(message):
@@ -91,6 +98,46 @@ def update_user_status(message):
     wx.CallAfter(pub.sendMessage, 'user_status', username=username, status=status)
 
 
+def handle_file_description(message):
+    chat_id = message['chat_id']
+    file_name = message['file_name']
+    file_size = message['file_size']
+    sender = message['sender']
+    file_hash = message['file_hash']
+    wx.CallAfter(pub.sendMessage, 'file_description', chat_id=chat_id, file_name=file_name, file_size=file_size, sender=sender, file_hash=file_hash)
+
+
+def handle_file_in_chat(message):
+    # Show a dialog to select the location to save the file
+    dialog = wx.FileDialog(None, message="Save file", defaultDir="", defaultFile=message['file_name'], wildcard="All files (*.*)|*.*", style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    if dialog.ShowModal() == wx.ID_OK:
+        # Get the path of the selected file
+        file_path = dialog.GetPath()
+        # B64 deocde the contents
+        file_contents = base64.b64decode(message['file_contents'])
+        # Save the file using the FileHandler
+        FileHandler.save_file(file_contents, file_path)
+
+    dialog.Destroy()
+
+
+def handle_chat_history(message):
+    if type(message['messages']) != list:
+        messages = [message['messages']]
+    else:
+        messages = message['messages']
+
+    messages_params = []
+    for msg in messages:
+        msg = base64.b64decode(msg.encode()).decode()
+        msg_params = Protocol.unprotocol_msg('chat', msg)
+        messages_params.append(msg_params)
+
+        print(msg_params)
+    
+    wx.CallAfter(pub.sendMessage, 'chat_history', messages=messages_params)
+
+
 approve_reject_dict = {
     1: handle_register_ans,
     2: handle_login_ans,
@@ -107,12 +154,14 @@ general_dict = {
 }
 
 chats_dict = {
-    'text_message': handle_text_message
+    'text_message': handle_text_message,
+    'file_description': handle_file_description,
+    'chat_history': handle_chat_history
 }
 
 files_dict = {
     'user_profile_picture': handle_user_pic,
-    'file_in_chat': None
+    'file_in_chat': handle_file_in_chat
 }
 
 

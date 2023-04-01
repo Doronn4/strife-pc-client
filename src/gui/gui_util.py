@@ -1,3 +1,5 @@
+import hashlib
+import os
 import threading
 import time
 from src.core.client_protocol import Protocol
@@ -43,6 +45,13 @@ class User:
         self.call_on_update = []
         # Call the update_pic() method to update the user's profile picture.
         self.update_pic()
+
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, User):
+            return self.username == __value.username
+        
+    def __str__(self):
+        return f"Username: {self.username}; status: {self.status}; Chatid: {self.chat_id}"
 
     def update_pic(self):
         """
@@ -108,6 +117,7 @@ class User:
         # If there is no video frame or the last update was more than MAX_TIMEOUT seconds ago,
         # return the user's profile picture as a bitmap.
         if frame is None or time.time() - self.last_update > self.MAX_TIMEOUT:
+            print('yes video no')
             frame = self.pic.ConvertToBitmap()
 
         return frame
@@ -170,7 +180,7 @@ class UserBox(wx.Panel):
             self.sizer.AddSpacer(10)
 
             # Add the user profile picture to the horizontal sizer
-            pic = wx.Image(self.user.pic, wx.BITMAP_TYPE_ANY)\
+            pic = self.user.pic\
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
             self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
@@ -225,6 +235,7 @@ class UserBox(wx.Panel):
         self.username_text.SetLabel(self.user.username)
         # Refresh the panel to show the updated user
         self.Refresh()
+        self.Layout()
 
 
 class SelectFriendDialog(wx.Dialog):
@@ -459,6 +470,7 @@ class SettingsDialog(wx.Dialog):
         size = (wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.8, wx.DisplaySize()[1] * self.RELATIVE_SIZE)
         self.SetSize(size)
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
+        self.SetForegroundColour(wx.Colour(237, 99, 99))
 
         self.parent = parent
 
@@ -469,7 +481,10 @@ class SettingsDialog(wx.Dialog):
         self.username_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.password_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
+        font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+
         self.name_label = wx.StaticText(self, label='Change username:')
+        self.name_label.SetFont(font)
         self.name_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
         self.name_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.username_sizer.Add(self.name_label, 1, wx.ALIGN_CENTER)
@@ -479,6 +494,7 @@ class SettingsDialog(wx.Dialog):
         self.username_sizer.Add(self.name_submit_button, 1, wx.ALIGN_CENTER)
 
         self.picture_label = wx.StaticText(self, label='Change profile picture:')
+        self.picture_label.SetFont(font)
         self.file_picker = wx.FilePickerCtrl(self, style=wx.FLP_OPEN, wildcard="Image files (*.jpg, *.png, "
                                                                                "*.gif)|*.jpg;*.png;*.gif")
         self.pic_submit_button = wx.Button(self, label='submit', size=(50, 20))
@@ -490,6 +506,7 @@ class SettingsDialog(wx.Dialog):
         self.pic_submit_button.Bind(wx.EVT_BUTTON, self.onPicChange)
 
         self.status_label = wx.StaticText(self, label='Change status:')
+        self.status_label.SetFont(font)
         self.status_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
         self.status_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.status_sizer.Add(self.status_label, 1, wx.ALIGN_CENTER)
@@ -497,8 +514,10 @@ class SettingsDialog(wx.Dialog):
         self.status_sizer.Add(self.status_input, 1, wx.ALIGN_CENTER)
         self.status_sizer.AddSpacer(10)
         self.status_sizer.Add(self.status_submit_button, 1, wx.ALIGN_CENTER)
+        self.status_submit_button.Bind(wx.EVT_BUTTON, self.onStatusChange)
 
         self.password_label = wx.StaticText(self, label='Change password:')
+        self.password_label.SetFont(font)
         self.password_input = wx.TextCtrl(self, style=wx.TE_PASSWORD | wx.TE_LEFT, size=(100, 20))
         self.pass_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.password_sizer.Add(self.password_label, 1, wx.ALIGN_CENTER)
@@ -530,6 +549,14 @@ class SettingsDialog(wx.Dialog):
             b64_contents = base64.b64encode(pic_contents).decode()
             msg = Protocol.change_pfp(b64_contents)
             self.parent.parent.files_com.send_data(msg)
+
+    def onStatusChange(self, event):
+        status = self.status_input.GetValue()
+        if status == '':
+            wx.MessageBox('No status chosen', 'Error', wx.OK | wx.ICON_ERROR)
+        else:
+            msg = Protocol.change_status(status)
+            self.parent.parent.general_com.send_data(msg)
 
 
 class CallUserPanel(wx.Panel):
@@ -758,6 +785,8 @@ class MessagesPanel(ScrolledPanel):
 
         self.SetSizer(self.sizer)
 
+        self.parent = parent
+
     def add_text_message(self, sender: User, message: str):
         """
         Adds a text message panel to the chat, aligns the message to the left if the sender is not the current user,
@@ -769,8 +798,8 @@ class MessagesPanel(ScrolledPanel):
         :return: None
         """
         # Create a new ChatMessage panel with the sender box and message
-        is_current_user = False  # TEMP
-        chat_message = ChatMessage(self, sender, message, align_right=is_current_user)
+        is_current_user = sender == User.this_user
+        chat_message = ChatMessage(self, sender, message, align_right=False)
 
         # Add the ChatMessage panel to the ChatPanel sizer
         self.sizer.Add(chat_message, 0, wx.EXPAND, border=5)
@@ -779,6 +808,56 @@ class MessagesPanel(ScrolledPanel):
         self.Layout()
         self.Refresh()
         self.SetupScrolling()
+
+    def add_text_message_top(self, sender: User, message: str):
+        """
+        Adds a text message panel to the top of the chat, aligns the message to the left if the sender is not the current user,
+        or to the right if it is.
+        :param sender: User object representing the sender of the message
+        :type sender: User
+        :param message: Text message to be displayed
+        :type message: str
+        :return: None
+        """
+        # Create a new ChatMessage panel with the sender box and message
+        is_current_user = sender == User.this_user
+        chat_message = ChatMessage(self, sender, message, align_right=False)
+
+        # Add the ChatMessage panel to the ChatPanel sizer
+        self.sizer.PrependSpacer(self.MESSAGES_GAP)
+        self.sizer.Prepend(chat_message, 0, wx.EXPAND, border=5)
+
+        self.Layout()
+        self.Refresh()
+        self.SetupScrolling()
+
+    def add_file_description(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
+        is_current_user = sender == User.this_user
+        file_desc = FileDescription(self, chat_id, sender, file_name, file_size, file_hash, align_right=False)
+
+        # Add the ChatMessage panel to the ChatPanel sizer
+        self.sizer.Add(file_desc, 0, wx.EXPAND, border=5)
+        self.sizer.AddSpacer(self.MESSAGES_GAP)
+
+        self.Layout()
+        self.Refresh()
+        self.SetupScrolling()
+
+    def add_file_description_top(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
+        is_current_user = sender == User.this_user
+        file_desc = FileDescription(self, chat_id, sender, file_name, file_size, file_hash, align_right=False)
+
+        # Add the ChatMessage panel to the ChatPanel sizer
+        self.sizer.PrependSpacer(self.MESSAGES_GAP)
+        self.sizer.Prepend(file_desc, 0, wx.EXPAND, border=5)
+
+        self.Layout()
+        self.Refresh()
+        self.SetupScrolling()
+
+
+    def reset_messages(self):
+        count = self.sizer.Clear(True)
 
 
 class ChatTools(wx.Panel):
@@ -820,8 +899,23 @@ class ChatTools(wx.Panel):
         wildcard = 'All files (*.*)|*.*'  # Filter file types to show
         dialog = wx.FileDialog(None, message='Choose a file', wildcard=wildcard, style=wx.FD_OPEN)
         if dialog.ShowModal() == wx.ID_OK:
+            # Get the path of the chosen file
             file_path = dialog.GetPath()
-            # TODO: Do something with the selected file path
+            # Load the contents of the file
+            file_contents = FileHandler.load_file(file_path)
+            # Encode the file contents in base64 format
+            b64_contents = base64.b64encode(file_contents).decode()
+            # Construct a message to send the file to the server
+            msg = Protocol.send_file(self.chat_id, os.path.basename(file_path), b64_contents)
+            # Get the file hash
+            file_hash = hashlib.sha256(b64_contents.encode()).hexdigest()
+            # Send the message to the server
+            self.parent.GetParent().parent.parent.files_com.send_data(msg)
+            # File description msg
+            msg = Protocol.file_description(User.this_user.username, self.chat_id, os.path.basename(file_path), len(file_contents), file_hash)
+            # Send the msg to the server
+            self.parent.GetParent().parent.parent.chats_com.send_data(msg)
+
         dialog.Destroy()
 
     def onMessageSend(self, event):
@@ -875,6 +969,53 @@ class ChatMessage(wx.Panel):
         self.Layout()
 
 
+class FileDescription(wx.Panel):
+        def __init__(self, parent, user: User, chat_id: int, file_name: str, file_size: int, file_hash: str, align_right=False):
+            super(FileDescription, self).__init__(parent)
+            self.file_name = file_name
+            self.file_size = file_size
+            self.sender = user
+            self.file_hash = file_hash
+            self.chat_id = chat_id
+            self.parent = parent
+            self.GAP = 40
+            self.SetBackgroundColour(wx.Colour(194, 194, 194))
+
+            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            user_box = UserBox(self, user, align_right=align_right)
+
+            if not align_right:
+                self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
+                self.sizer.AddSpacer(self.GAP)
+
+            # Add a label with the file name
+            self.file_name_label = wx.StaticText(self, label=file_name)
+            self.sizer.Add(self.file_name_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+
+            # Add a label with the file size
+            self.file_size_label = wx.StaticText(self, label=f'{round(file_size/1000000, 2)} mb')
+            self.sizer.Add(self.file_size_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+
+            # Add a button to download the file
+            self.download_button = wx.Button(self, label='Download')
+            self.download_button.Bind(wx.EVT_BUTTON, self.onDownload)
+            self.sizer.Add(self.download_button, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+
+            if align_right:
+                self.sizer.AddSpacer(self.GAP)
+                self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
+
+            self.SetSizer(self.sizer)
+
+        def onDownload(self, event):
+            print('requesting file')
+            # Construct a message to request the file from the server
+            msg = Protocol.request_file(self.file_hash)
+            # Send the message to the server
+            self.parent.parent.GetParent().parent.parent.general_com.send_data(msg)
+
+
 class GroupsSwitcher(wx.BoxSizer):
     def __init__(self, parent):
         """
@@ -893,9 +1034,38 @@ class GroupsSwitcher(wx.BoxSizer):
         self.groups = {}
         self.add_member_dialog = SelectFriendDialog(self.parent,
                                                     [friend.username for friend in main_gui.MainPanel.my_friends])
+        self.current_group_id = -1
 
         pub.subscribe(self.onTextMessage, 'text_message')
+        pub.subscribe(self.onFileDescription, 'file_description')
         pub.subscribe(self.onGroupMembers, 'group_members')
+        pub.subscribe(self.onChatHistory, 'chat_history')
+
+
+    def onChatHistory(self, messages):
+        chat_id = messages[0]['chat_id']
+        self.groups[chat_id][0].reset_messages()
+
+        for msg in messages:
+            sender = msg['sender']
+            chat_id = msg['chat_id']
+            sender_user = main_gui.MainPanel.get_user_by_name(sender)
+            try:
+                chat_key = KeysManager.get_chat_key(chat_id)
+            except Exception:
+                print('no chat key for', chat_id)
+            else:
+                if msg['opname'] == 'text_message':
+                    raw_msg = msg['message']
+                    decrypted_message = AESCipher.decrypt(chat_key, raw_msg)
+                    print('adding on top!', decrypted_message)
+                    self.groups[chat_id][0].add_text_message_top(sender_user, decrypted_message)
+                else:
+                    # File description
+                    filename = msg['file_name']
+                    file_size = msg['file_size']
+                    file_hash = msg['file_hash']
+                    self.groups[chat_id][0].add_file_description_top(sender_user, chat_id, filename, file_size, file_hash)
 
     def onTextMessage(self, sender, chat_id, raw_message):
         """
@@ -917,6 +1087,11 @@ class GroupsSwitcher(wx.BoxSizer):
             decrypted_message = AESCipher.decrypt(chat_key, raw_message)
             sender_user = main_gui.MainPanel.get_user_by_name(sender)
             self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
+
+    def onFileDescription(self, chat_id, file_name, file_size, sender, file_hash):
+        sender_user = main_gui.MainPanel.get_user_by_name(sender)
+        self.groups[chat_id][0].add_file_description(sender_user, chat_id, file_name, file_size, file_hash)
+
 
     def onGroupMembers(self, chat_id, usernames):
         self.groups[chat_id][1].reset_friends()
@@ -1022,6 +1197,7 @@ class GroupsSwitcher(wx.BoxSizer):
             # Show the given panel
             if id_ == chat_id:
                 group_panel.Show()
+                self.current_group_id = chat_id
             else:
                 # and hide the rest
                 group_panel.Hide()

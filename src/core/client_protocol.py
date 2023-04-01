@@ -82,7 +82,7 @@ class Protocol:
         'user_status': ('username', 'status'),
         'friend_added': ('friend_username', 'friends_key', 'chat_id',),
         'text_message': ('chat_id', 'sender', 'message'),
-        'file_description': ('file_name', 'file_size', 'file_hash'),
+        'file_description': ('chat_id', 'sender', 'file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents'),
         'chat_history': ('messages',)
@@ -196,11 +196,11 @@ class Protocol:
         return msg
 
     @staticmethod
-    def request_file(chat_id, file_hash):
+    def request_file(file_hash):
         # Get the opcode of request_file
         opcode = Protocol.general_opcodes['request_file']
         # Construct the message
-        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{chat_id}{Protocol.FIELD_SEPARATOR}{file_hash}"
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{file_hash}"
         # Return the message after protocol
         return msg
 
@@ -281,19 +281,9 @@ class Protocol:
         # Get the opcode of send_message
         kind = Protocol.chat_opcodes['text_message']
         # Construct the message
-        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message} "
+        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{message}"
         # Return the message after protocol
         return msg
-
-    # @staticmethod
-    # def send_image(chat_id, image_name, image):
-    #     # Get the opcode of send_image
-    #     kind = Protocol.files_opcodes['file_in_chat']
-    #     # Construct the message
-    #     msg = f"{kind}{Protocol.FIELD_SEPARATOR}{len(image)}{Protocol.FIELD_SEPARATOR}{chat_id}" \
-    #         f"{Protocol.FIELD_SEPARATOR}{image_name}{Protocol.FIELD_SEPARATOR}{image} "
-    #     # Return the message after protocol
-    #     return msg
 
     @staticmethod
     def send_file(chat_id, file_name, file):
@@ -302,8 +292,14 @@ class Protocol:
         kind = Protocol.files_opcodes['file_in_chat']
         # Construct the message
         msg = f"{kind}{Protocol.FIELD_SEPARATOR}{chat_id}" \
-            f"{Protocol.FIELD_SEPARATOR}{file_name}{Protocol.FIELD_SEPARATOR}{file} "
+            f"{Protocol.FIELD_SEPARATOR}{file_name}{Protocol.FIELD_SEPARATOR}{file}"
         # Return the message after protocol
+        return msg
+    
+    @staticmethod
+    def file_description(sender_username, chat_id, filename, file_size, file_hash):
+        kind = Protocol.chat_opcodes['file_description']
+        msg = f"{kind}{Protocol.FIELD_SEPARATOR}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{filename}{Protocol.FIELD_SEPARATOR}{file_size}{Protocol.FIELD_SEPARATOR}{file_hash}"
         return msg
 
     @staticmethod
