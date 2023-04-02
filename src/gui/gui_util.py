@@ -608,12 +608,12 @@ class CallUserPanel(wx.Panel):
 
         # Bind events to their respective methods
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.Bind(wx.EVT_TIMER, self.NextFrame)
 
     def init_timer(self):
         # Set up the timer for getting new frames and refreshing the display
         self.timer = wx.Timer(self)
         self.timer.Start(1000.0 / self.fps)
+        self.Bind(wx.EVT_TIMER, self.NextFrame, self.timer)
 
     def OnPaint(self, evt):
         """
