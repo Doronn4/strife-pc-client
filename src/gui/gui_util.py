@@ -703,8 +703,7 @@ class CallGrid(wx.GridSizer):
         self.Layout()
         # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
-
-        self.Refresh()
+        self.Layout()
 
     def remove_user(self, username):
         """
