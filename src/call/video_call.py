@@ -51,6 +51,7 @@ class VideoCall:
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
                 data = self.aes.encrypt_bytes(self.key, buffer.tobytes())
+                print(len(data))
                 # The ips to send to
                 ips = list(self.ips_users.keys())
                 # Send the image to all the users in the call
@@ -64,7 +65,8 @@ class VideoCall:
             try:
                 # Receive the frame
                 data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
-            except Exception:
+            except Exception as e:
+                print(e)
                 continue
 
             # Decrypt the data using the call's symmetrical key

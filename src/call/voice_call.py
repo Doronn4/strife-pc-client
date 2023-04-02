@@ -65,7 +65,6 @@ class VoiceCall:
                 ips = list(self.call_members.keys())
                 # send the data to the ips
                 for ip in ips:
-                    print(len(data))
                     self.socket.sendto(data, (ip, self.PORT))
 
     def receive_audio(self):
@@ -73,7 +72,6 @@ class VoiceCall:
             try:
                 data, addr = self.socket.recvfrom(self.CHUNK*2 + 32)
             except Exception as e:
-                print('exception recv', e)
                 continue
 
             # Decrypt the data using the call's symmetrical key
@@ -81,7 +79,6 @@ class VoiceCall:
 
             ip = addr[0]
             
-            print('received audio from ', ip)
             if ip not in self.call_members.keys():
                 self.add_user(ip, self.parent.get_user_by_ip(ip))
 
@@ -89,10 +86,11 @@ class VoiceCall:
 
     def add_user(self, ip, user):
         self.call_members[ip] = user
-        print('added user to voice', ip, user)
+        self.parent.call_grid.add_user(user)
 
     def remove_user(self, ip):
         if ip in self.call_members.keys():
+            self.parent.call_grid.remove_user(self.call_members[ip])
             del self.call_members[ip]
 
     def toggle_mute(self):
