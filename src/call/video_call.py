@@ -79,7 +79,10 @@ class VideoCall:
             ip = addr[0]
             
             if ip not in self.ips_users.keys():
-                self.add_user(ip, self.parent.get_user_by_ip(ip))
+                if ip in self.parent.call_members.keys():
+                    self.add_user(ip, self.parent.get_user_by_ip(ip))
+                else:
+                    continue
 
             # Put the image/frame in the ips-videos dict
             self.ips_users[ip].update_video(frame)

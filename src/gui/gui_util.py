@@ -122,7 +122,6 @@ class User:
         # If there is no video frame or the last update was more than MAX_TIMEOUT seconds ago,
         # return the user's profile picture as a bitmap.
         if frame is None or time.time() - self.last_update > self.MAX_TIMEOUT:
-            print('yes video no')
             frame = self.pic.ConvertToBitmap()
 
         return frame
