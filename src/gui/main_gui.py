@@ -288,11 +288,13 @@ class MainPanel(wx.Panel):
         # TEMP
         msg = Protocol.join_voice(chat_id)
         self.parent.general_com.send_data(msg)
+        self.onVoice()
 
     def onVideoStart(self, chat_id):
         # TEMP
         msg = Protocol.join_video(chat_id)
         self.parent.general_com.send_data(msg)
+        self.onVideo()
 
 
     def onVoice(self, event):

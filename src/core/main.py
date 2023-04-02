@@ -197,8 +197,8 @@ general_dict = {
     'friend_added': handle_friend_added,
     'voice_call_info': handle_voice_info,
     'video_call_info': handle_video_info,
-    'voice_call_user_joined': handle_voice_joined,
-    'video_call_user_joined': handle_video_joined,
+    'voice_user_joined': handle_voice_joined,
+    'video_user_joined': handle_video_joined,
     'voice_call_started': handle_voice_started,
     'video_call_started': handle_video_started
 }
