@@ -5,10 +5,11 @@ import cv2
 import numpy
 from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler
+import src.gui.main_gui as main_gui
 
 
 class VideoCall:
-    def __init__(self, chat_id: int, key: str):
+    def __init__(self, parent, chat_id: int, key: str):
         """
         Creates a new VideoCall object to handle the video call
         :param chat_id: The chat id of the call
@@ -28,15 +29,18 @@ class VideoCall:
         # Is call active
         self.active = False
         # A dict of the call members' ips as the keys, and the video frames received from them as the values
-        self.ips_videos = {}
+        self.ips_users = {}
         # Whether to send video or not
         self.transmit_video = True
+        self.parent = parent
 
         self.aes = AESCipher()
         self.key = key
 
         # Creates a UDP socket
         self.socket = None
+
+        self._start()
 
     def send_video(self):
         while self.active:
@@ -46,9 +50,9 @@ class VideoCall:
                 # Compress the frame to jpg format
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
-                data = self.aes.encrypt(self.key, buffer.tobytes())
+                data = self.aes.encrypt_bytes(self.key, buffer.tobytes())
                 # The ips to send to
-                ips = list(self.ips_videos.keys())
+                ips = list(self.ips_users.keys())
                 # Send the image to all the users in the call
                 for ip in ips:
                     self.socket.sendto(data, (ip, self.PORT))
@@ -57,32 +61,40 @@ class VideoCall:
 
     def receive_videos(self):
         while self.active:
-            # Receive the frame
-            data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+            try:
+                # Receive the frame
+                data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+            except Exception:
+                continue
 
             # Decrypt the data using the call's symmetrical key
             data = self.aes.decrypt_bytes(self.key, data)
 
-            # Get the ip of the sender
-            ip = addr[0]
             # Convert the buffer received to an image
             buffer = numpy.frombuffer(data, numpy.uint8)
             frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
-            # Put the image/frame in the ips-videos dict
-            self.ips_videos[ip] = frame
 
-    def add_user(self, ip):
-        if ip not in self.ips_videos.keys():
-            self.ips_videos[ip] = None
+            # Get the ip of the sender
+            ip = addr[0]
+            
+            if ip not in self.ips_users.keys():
+                self.add_user(ip, self.parent.get_user_by_ip(ip))
+
+            # Put the image/frame in the ips-videos dict
+            self.ips_users[ip].update_video(frame)
+
+    def add_user(self, ip, user):
+        if ip not in self.ips_users.keys():
+            self.ips_users[ip] = user
 
     def remove_user(self, ip):
-        if ip in self.ips_videos.keys():
-            del self.ips_videos[ip]
+        if ip in self.ips_users.keys():
+            del self.ips_users[ip]
 
     def toggle_video(self):
         self.transmit_video = not self.transmit_video
 
-    def start(self):
+    def _start(self):
         self.active = True
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.PORT))
@@ -93,3 +105,4 @@ class VideoCall:
     def terminate(self):
         self.active = False
         self.camera.close()
+        self.socket.close()

@@ -137,6 +137,50 @@ def handle_chat_history(message):
     
     wx.CallAfter(pub.sendMessage, 'chat_history', messages=messages_params)
 
+def handle_voice_info(message):
+    chat_id = message['chat_id']
+    ips = message['ips']
+    usernames = message['usernames']
+
+    if type(ips) != list:
+        ips = [ips]
+        usernames = [usernames]
+
+    wx.CallAfter(pub.sendMessage, 'voice_info', chat_id=chat_id, ips=ips, usernames=usernames)
+
+def handle_video_info(message):
+    chat_id = message['chat_id']
+    ips = message['ips']
+    usernames = message['usernames']
+
+    if type(ips) != list:
+        ips = [ips]
+        usernames = [usernames]
+
+    wx.CallAfter(pub.sendMessage, 'video_info', chat_id=chat_id, ips=ips, usernames=usernames)
+
+def handle_voice_joined(message):
+    chat_id = message['chat_id']
+    ip = message['user_ip']
+    username = message['username']
+
+    wx.CallAfter(pub.sendMessage, 'voice_joined', chat_id=chat_id, ip=ip, username=username)
+
+def handle_video_joined(message):
+    chat_id = message['chat_id']
+    ip = message['user_ip']
+    username = message['username']
+
+    wx.CallAfter(pub.sendMessage, 'video_joined', chat_id=chat_id, ip=ip, username=username)
+
+def handle_voice_started(message):
+    chat_id = message['chat_id']
+    print(chat_id, type(chat_id))
+    wx.CallAfter(pub.sendMessage, 'voice_started', chat_id=chat_id)
+
+def handle_video_started(message):
+    chat_id = message['chat_id']
+    wx.CallAfter(pub.sendMessage, 'video_started', chat_id=chat_id)
 
 approve_reject_dict = {
     1: handle_register_ans,
@@ -151,6 +195,12 @@ general_dict = {
     'group_members': update_group_members,
     'user_status': update_user_status,
     'friend_added': handle_friend_added,
+    'voice_call_info': handle_voice_info,
+    'video_call_info': handle_video_info,
+    'voice_call_user_joined': handle_voice_joined,
+    'video_call_user_joined': handle_video_joined,
+    'voice_call_started': handle_voice_started,
+    'video_call_started': handle_video_started
 }
 
 chats_dict = {

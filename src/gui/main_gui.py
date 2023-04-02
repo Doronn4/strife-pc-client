@@ -285,16 +285,18 @@ class MainPanel(wx.Panel):
                 self.parent.general_com.send_data(msg)
 
     def onVoiceStart(self, chat_id):
-        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-        self.voice_call_window = gui_util.CallWindow(self, title)
-        self.voice_call_window.call_grid.add_user(gui_util.User.this_user)
-        self.voice_call_window.Show()
+        if not self.video_call_window and not self.voice_call_window:
+            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+            key = KeysManager.get_chat_key(chat_id)
+            self.voice_call_window = gui_util.CallWindow(self, title, chat_id, key)
+            self.voice_call_window.Show()
 
     def onVideoStart(self, chat_id):
-        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-        self.video_call_window = gui_util.CallWindow(self, title, video=True)
-        self.video_call_window.call_grid.add_user(gui_util.User.this_user)
-        self.video_call_window.Show()
+        if not self.video_call_window and not self.voice_call_window:
+            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+            key = KeysManager.get_chat_key(chat_id)
+            self.video_call_window = gui_util.CallWindow(self, title, chat_id, key, video=True)
+            self.video_call_window.Show()
 
     def onVoice(self, event):
         msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)

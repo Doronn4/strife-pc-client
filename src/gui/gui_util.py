@@ -1,5 +1,6 @@
 import hashlib
 import os
+import pyaudio
 import threading
 import time
 from src.core.client_protocol import Protocol
@@ -12,6 +13,8 @@ from src.handlers.file_handler import FileHandler
 from src.core.keys_manager import KeysManager
 from src.core.cryptions import AESCipher
 import base64
+from src.call.video_call import VideoCall
+from src.call.voice_call import VoiceCall
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -22,6 +25,7 @@ class User:
     # This is a class variable that will hold the currently active user object.
     # It is initialized to None.
     this_user = None
+    audio = pyaudio.PyAudio()
 
     def __init__(self, username='NoUser', status='', chat_id=-1):
         """
@@ -39,6 +43,7 @@ class User:
         self.status = status
         self.pic = wx.Image('assets/group_pic.png', wx.BITMAP_TYPE_ANY)
         self.video_frame = None
+        self.audio_output = None
         self.last_update = 0
         self.MAX_TIMEOUT = 3
         self.chat_id = chat_id
@@ -121,6 +126,12 @@ class User:
             frame = self.pic.ConvertToBitmap()
 
         return frame
+    
+    def update_audio(self, audio_frame):
+        if not self.audio_output:
+            self.audio_output = User.audio.open(format=VoiceCall.FORMAT, channels=VoiceCall.CHANNELS, rate=VoiceCall.RATE, output=True,
+                                                frames_per_buffer=VoiceCall.CHUNK)
+        self.audio_output.write(audio_frame)
 
 
 class UserBox(wx.Panel):
@@ -701,13 +712,16 @@ class CallGrid(wx.GridSizer):
         for panel in self.users_panels:
             # Check if the current panel's user has the same username as the one provided
             if panel.user.username == username:
+                # Remove the panel from the grid sizer
+                index = self.users_panels.index(panel)
+                self.Remove(index)
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
                 break
 
 
 class CallWindow(wx.Frame):
-    def __init__(self, parent, title, video=False):
+    def __init__(self, parent, title, chat_id, key, video=False):
         super(CallWindow, self).__init__(parent, name=title)
         self.SetWindowStyleFlag(wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MINIMIZE_BOX
                                 ^ wx.MAXIMIZE_BOX ^ wx.SYSTEM_MENU ^ wx.CLOSE_BOX)
@@ -727,6 +741,13 @@ class CallWindow(wx.Frame):
         size = (wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE)
         self.SetSize(size)
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
+
+        self.is_video = video
+        self.key = key
+        self.call_members = {}
+
+        self.voice_call = VoiceCall(self, chat_id, key)
+        self.video_call = VideoCall(self, chat_id, key) if video else None
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -761,17 +782,47 @@ class CallWindow(wx.Frame):
 
         self.SetSizer(self.sizer)
 
+        pub.subscribe(self.onVoiceInfo, 'voice_info')
+        pub.subscribe(self.onVoiceInfo, 'video_info')
+        pub.subscribe(self.onVoiceJoined, 'voice_joined')
+        pub.subscribe(self.onVideoJoined, 'video_joined')
+
+    
+    def onVoiceInfo(self, chat_id, ips, usernames):
+        if self.voice_call and self.voice_call.chat_id == chat_id:
+            self.call_members = dict(zip(ips, usernames))
+
+    def onVideoInfo(self, chat_id, ips, usernames):
+        if self.video_call and self.video_call.chat_id == chat_id:
+            self.call_members = dict(zip(ips, usernames))
+
+    def onVoiceJoined(self, chat_id, ip, username):
+        if self.voice_call and self.voice_call.chat_id == chat_id:
+            self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            self.call_members[ip] = username
+
+    def onVideoJoined(self, chat_id, ip, username):
+        if self.video_call and self.video_call.chat_id == chat_id:
+            self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            self.call_members[ip] = username
+
+    def get_user_by_ip(self, ip):
+        return main_gui.MainPanel.get_user_by_name(self.call_members.get(ip))
+
     def onMuteToggle(self, event):
-        # TODO: handle mute, change icon
-        pass
+        self.voice_call.toggle_mute()
 
     def onHangup(self, event):
-        # TODO: handle logic stuff
+        self.voice_call.terminate()
+        if self.is_video:
+            self.video_call.terminate()
+        print('closing done')
         self.Close()
+        print('closed self.')
 
     def onCameraToggle(self, event):
-        # TODO: handle camera, change icon
-        pass
+        if self.is_video:
+            self.video_call.toggle_video()
 
 
 class MessagesPanel(ScrolledPanel):
