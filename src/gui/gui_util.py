@@ -703,6 +703,9 @@ class CallGrid(wx.GridSizer):
         # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
 
+        self.Layout()
+        self.Refresh()
+
     def remove_user(self, username):
         """
         Removes a user panel from the grid.
@@ -722,7 +725,9 @@ class CallGrid(wx.GridSizer):
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
                 break
-
+        
+        self.Layout()
+        self.Refresh()
 
 class CallWindow(wx.Frame):
     def __init__(self, parent, title, chat_id, key, video=False):
