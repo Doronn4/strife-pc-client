@@ -796,7 +796,7 @@ class CallWindow(wx.Frame):
         self.Layout()
 
         pub.subscribe(self.onVoiceInfo, 'voice_info')
-        pub.subscribe(self.onVoiceInfo, 'video_info')
+        pub.subscribe(self.onVideoInfo, 'video_info')
         pub.subscribe(self.onVoiceJoined, 'voice_joined')
         pub.subscribe(self.onVideoJoined, 'video_joined')
 
@@ -810,18 +810,13 @@ class CallWindow(wx.Frame):
         print('video info', chat_id, ips, usernames)
         if self.video_call and self.video_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
-            print(self.call_members)
 
     def onVoiceJoined(self, chat_id, ip, username):
-        print('joined', chat_id, ip, username)
-        print('my', self.voice_call.chat_id)
         if self.voice_call and self.voice_call.chat_id == chat_id:
-            print('if yes')
             self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
 
     def onVideoJoined(self, chat_id, ip, username):
-        print('joined', chat_id, ip, username)
         if self.video_call and self.video_call.chat_id == chat_id:
             self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
