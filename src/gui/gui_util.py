@@ -640,10 +640,12 @@ class CallUserPanel(wx.Panel):
             self.bmp = frame
         else:
             self.bmp.CopyFromBuffer(frame)
-        # Scale the bitmap to fit the size of the panel
-        self.bmp = self.scale_bitmap(self.bmp, self.GetSize()[0], self.GetSize()[1])
-        # Refresh the display
-        self.Refresh()
+
+        if self.GetSize()[0] > 0 and self.GetSize()[1] > 0:
+            # Scale the bitmap to fit the size of the panel
+            self.bmp = self.scale_bitmap(self.bmp, self.GetSize()[0], self.GetSize()[1])
+            # Refresh the display
+            self.Refresh()
 
     @staticmethod
     def scale_bitmap(bitmap, width, height):
@@ -699,7 +701,6 @@ class CallGrid(wx.GridSizer):
         """
         # Create a new CallUserPanel object with the provided user and store it in the list
         self.users_panels.append(CallUserPanel(self.parent, user))
-
         self.Layout()
         # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
