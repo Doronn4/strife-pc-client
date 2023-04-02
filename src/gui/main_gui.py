@@ -304,8 +304,9 @@ class MainPanel(wx.Panel):
             self.voice_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key)
             self.voice_call_window.Show()
         
-        msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
-        self.parent.general_com.send_data(msg)
+        if event:
+            msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
+            self.parent.general_com.send_data(msg)
 
     def onVideo(self, event):
         if not self.video_call_window and not self.voice_call_window:
@@ -314,8 +315,9 @@ class MainPanel(wx.Panel):
             self.video_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key, video=True)
             self.video_call_window.Show()
         
-        msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
-        self.parent.general_com.send_data(msg)
+        if event:
+            msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
+            self.parent.general_com.send_data(msg)
 
     def onLogout(self, event):
         # Handle logging out logic
