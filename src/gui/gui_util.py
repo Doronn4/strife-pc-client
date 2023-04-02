@@ -797,11 +797,15 @@ class CallWindow(wx.Frame):
             self.call_members = dict(zip(ips, usernames))
 
     def onVoiceJoined(self, chat_id, ip, username):
+        print('joined', chat_id, ip, username)
+        print('my', self.voice_call.chat_id)
         if self.voice_call and self.voice_call.chat_id == chat_id:
+            print('if yes')
             self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
 
     def onVideoJoined(self, chat_id, ip, username):
+        print('joined', chat_id, ip, username)
         if self.video_call and self.video_call.chat_id == chat_id:
             self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username

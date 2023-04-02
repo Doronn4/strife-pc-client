@@ -59,7 +59,6 @@ class VoiceCall:
         while self.active:
             if not self.muted:
                 data = self.audio_input.read(self.CHUNK)
-
                 # Encrypt the data using the call's symmetrical key
                 data = self.aes.encrypt_bytes(self.key, data)
                 # The ips to send to
@@ -80,6 +79,7 @@ class VoiceCall:
 
             ip = addr[0]
             
+            print('received audio from ', ip)
             if ip not in self.call_members.keys():
                 self.add_user(ip, self.parent.get_user_by_ip(ip))
 
@@ -87,6 +87,7 @@ class VoiceCall:
 
     def add_user(self, ip, user):
         self.call_members[ip] = user
+        print('added user to voice', ip, user)
 
     def remove_user(self, ip):
         if ip in self.call_members.keys():
