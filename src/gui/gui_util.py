@@ -642,7 +642,6 @@ class CallUserPanel(wx.Panel):
             self.bmp.CopyFromBuffer(frame)
 
         if self.GetSize()[0] > 0 and self.GetSize()[1] > 0:
-            print('yes!')
             # Scale the bitmap to fit the size of the panel
             self.bmp = self.scale_bitmap(self.bmp, self.GetSize()[0], self.GetSize()[1])
             # Refresh the display
@@ -789,7 +788,7 @@ class CallWindow(wx.Frame):
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
         self.sizer.Add(self.call_grid, 3, wx.EXPAND)
-        self.sizer.Add(self.toolbar, 1, wx.EXPAND)
+        self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
 
         self.SetSizer(self.sizer)
 
