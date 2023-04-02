@@ -65,13 +65,15 @@ class VoiceCall:
                 ips = list(self.call_members.keys())
                 # send the data to the ips
                 for ip in ips:
+                    print(len(data))
                     self.socket.sendto(data, (ip, self.PORT))
 
     def receive_audio(self):
         while self.active:
             try:
-                data, addr = self.socket.recvfrom(self.CHUNK*2)
-            except Exception:
+                data, addr = self.socket.recvfrom(self.CHUNK*2 + 32)
+            except Exception as e:
+                print('exception recv', e)
                 continue
 
             # Decrypt the data using the call's symmetrical key
