@@ -571,7 +571,7 @@ class SettingsDialog(wx.Dialog):
 
 
 class CallUserPanel(wx.Panel):
-    def __init__(self, parent, user):
+    def __init__(self, parent, user, fps=30):
         """
         Constructor for the CallUserPanel class.
 
@@ -585,10 +585,11 @@ class CallUserPanel(wx.Panel):
         super(CallUserPanel, self).__init__(parent)
 
         # Make the timer stop when the panel is destroyed
-        # self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
+        self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
 
         # Set instance variables
         self.user = user
+        self.fps = fps
         self.RELATIVE_SIZE = 0.2
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
@@ -602,9 +603,17 @@ class CallUserPanel(wx.Panel):
         label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
 
+        self.timer = None
+        wx.CallAfter(self.init_timer)
+
         # Bind events to their respective methods
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_TIMER, self.NextFrame)
+
+    def init_timer(self):
+        # Set up the timer for getting new frames and refreshing the display
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000.0 / self.fps)
 
     def OnPaint(self, evt):
         """
@@ -627,7 +636,6 @@ class CallUserPanel(wx.Panel):
         :type event: wx.TimerEvent
         """
         # Get the next frame for the user and set it as a wx.Bitmap object
-        print('on next')
         frame = self.user.get_frame()
         if type(frame) == wx.Bitmap:
             self.bmp = frame
@@ -789,7 +797,6 @@ class CallWindow(wx.Frame):
         print('voice info', chat_id, ips, usernames)
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
-            print(self.call_members)
 
     def onVideoInfo(self, chat_id, ips, usernames):
         print('video info', chat_id, ips, usernames)
