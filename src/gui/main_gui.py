@@ -285,24 +285,33 @@ class MainPanel(wx.Panel):
                 self.parent.general_com.send_data(msg)
 
     def onVoiceStart(self, chat_id):
-        if not self.video_call_window and not self.voice_call_window:
-            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-            key = KeysManager.get_chat_key(chat_id)
-            self.voice_call_window = gui_util.CallWindow(self, title, chat_id, key)
-            self.voice_call_window.Show()
+        # TEMP
+        msg = Protocol.join_voice(chat_id)
+        self.parent.general_com.send_data(msg)
 
     def onVideoStart(self, chat_id):
-        if not self.video_call_window and not self.voice_call_window:
-            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-            key = KeysManager.get_chat_key(chat_id)
-            self.video_call_window = gui_util.CallWindow(self, title, chat_id, key, video=True)
-            self.video_call_window.Show()
+        # TEMP
+        msg = Protocol.join_video(chat_id)
+        self.parent.general_com.send_data(msg)
+
 
     def onVoice(self, event):
+        if not self.video_call_window and not self.voice_call_window:
+            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+            key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
+            self.voice_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key)
+            self.voice_call_window.Show()
+        
         msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
         self.parent.general_com.send_data(msg)
 
     def onVideo(self, event):
+        if not self.video_call_window and not self.voice_call_window:
+            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+            key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
+            self.video_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key, video=True)
+            self.video_call_window.Show()
+        
         msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
         self.parent.general_com.send_data(msg)
 
