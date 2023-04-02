@@ -627,6 +627,7 @@ class CallUserPanel(wx.Panel):
         :type event: wx.TimerEvent
         """
         # Get the next frame for the user and set it as a wx.Bitmap object
+        print('on next')
         frame = self.user.get_frame()
         if type(frame) == wx.Bitmap:
             self.bmp = frame

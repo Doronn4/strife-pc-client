@@ -77,7 +77,6 @@ class VideoCall:
 
             # Get the ip of the sender
             ip = addr[0]
-            print('received video from', ip)
             
             if ip not in self.ips_users.keys():
                 self.add_user(ip, self.parent.get_user_by_ip(ip))
