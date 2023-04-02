@@ -639,7 +639,8 @@ class CallUserPanel(wx.Panel):
         if type(frame) == wx.Bitmap:
             self.bmp = frame
         else:
-            self.bmp.CopyFromBuffer(frame)
+            wximg = wx.Image(frame.shape[1], frame.shape[0], frame)
+            self.bmp = wx.Bitmap(wximg)
 
         if self.GetSize()[0] > 0 and self.GetSize()[1] > 0:
             # Scale the bitmap to fit the size of the panel
