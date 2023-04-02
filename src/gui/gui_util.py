@@ -642,6 +642,7 @@ class CallUserPanel(wx.Panel):
             self.bmp.CopyFromBuffer(frame)
 
         if self.GetSize()[0] > 0 and self.GetSize()[1] > 0:
+            print('yes!')
             # Scale the bitmap to fit the size of the panel
             self.bmp = self.scale_bitmap(self.bmp, self.GetSize()[0], self.GetSize()[1])
             # Refresh the display
@@ -701,10 +702,11 @@ class CallGrid(wx.GridSizer):
         """
         # Create a new CallUserPanel object with the provided user and store it in the list
         self.users_panels.append(CallUserPanel(self.parent, user))
-        self.Layout()
         # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
+        print(self.GetSize())
         self.Layout()
+        self.parent.Layout()
 
     def remove_user(self, username):
         """
@@ -727,7 +729,7 @@ class CallGrid(wx.GridSizer):
                 break
         
         self.Layout()
-        self.Refresh()
+        self.parent.Layout()
 
 class CallWindow(wx.Frame):
     def __init__(self, parent, title, chat_id, key, video=False):
@@ -787,9 +789,11 @@ class CallWindow(wx.Frame):
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
         self.sizer.Add(self.call_grid, 3, wx.EXPAND)
-        self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
+        self.sizer.Add(self.toolbar, 1, wx.EXPAND)
 
         self.SetSizer(self.sizer)
+
+        self.Layout()
 
         pub.subscribe(self.onVoiceInfo, 'voice_info')
         pub.subscribe(self.onVoiceInfo, 'video_info')
