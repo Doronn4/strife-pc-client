@@ -100,7 +100,8 @@ class VoiceCall:
         self.active = False
         self.audio_input.close()
         for user in self.call_members.values():
-            user.audio_output.close()
-            user.audio_output = None
+            if user.audio_output:
+                user.audio_output.close()
+                user.audio_output = None
         
         self.socket.close()

@@ -789,10 +789,12 @@ class CallWindow(wx.Frame):
 
     
     def onVoiceInfo(self, chat_id, ips, usernames):
+        print('voice info', chat_id, ips, usernames)
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
     def onVideoInfo(self, chat_id, ips, usernames):
+        print('video info', chat_id, ips, usernames)
         if self.video_call and self.video_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
