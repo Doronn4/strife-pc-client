@@ -1,6 +1,7 @@
 import queue
 import socket
 import threading
+import wx
 import pyaudio
 from src.core.cryptions import AESCipher
 
@@ -89,7 +90,8 @@ class VoiceCall:
 
     def add_user(self, ip, user):
         self.call_members[ip] = user
-        self.parent.call_grid.add_user(user)
+        wx.CallAfter(self.parent.call_grid.add_user, user)
+
 
     def remove_user(self, ip):
         if ip in self.call_members.keys():

@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 import cv2
+import wx
 import numpy
 from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler
@@ -90,7 +91,7 @@ class VideoCall:
     def add_user(self, ip, user):
         if ip not in self.ips_users.keys():
             self.ips_users[ip] = user
-            self.parent.call_grid.add_user(user)
+            wx.CallAfter(self.parent.call_grid.add_user, user)
 
     def remove_user(self, ip):
         if ip in self.ips_users.keys():
