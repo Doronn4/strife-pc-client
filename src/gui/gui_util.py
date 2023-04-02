@@ -571,7 +571,7 @@ class SettingsDialog(wx.Dialog):
 
 
 class CallUserPanel(wx.Panel):
-    def __init__(self, parent, user, fps=30):
+    def __init__(self, parent, user):
         """
         Constructor for the CallUserPanel class.
 
@@ -585,7 +585,7 @@ class CallUserPanel(wx.Panel):
         super(CallUserPanel, self).__init__(parent)
 
         # Make the timer stop when the panel is destroyed
-        self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
+        # self.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.timer.Stop())
 
         # Set instance variables
         self.user = user
@@ -601,10 +601,6 @@ class CallUserPanel(wx.Panel):
         # Set the font, size and color of the label
         label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
-
-        # Set up the timer for getting new frames and refreshing the display
-        self.timer = wx.Timer(self)
-        self.timer.Start(1000.0 / fps)
 
         # Bind events to their respective methods
         self.Bind(wx.EVT_PAINT, self.OnPaint)

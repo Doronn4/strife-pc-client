@@ -29,6 +29,11 @@ class MainPanel(wx.Panel):
 
         self.parent = parent
 
+        self.fps = 30
+        # Set up the timer for getting new frames and refreshing the display
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000.0 / self.fps)
+
         # Sub windows
         self.settings_window = gui_util.SettingsDialog(self)
         self.voice_call_window = None  # temp ******
