@@ -17,7 +17,6 @@ from src.call.video_call import VideoCall
 from src.call.voice_call import VoiceCall
 import wx.lib.agw.toasterbox as toaster
 
-
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
 MAX_PARTICIPANTS = 6
 
@@ -61,7 +60,7 @@ class User:
         """
         if isinstance(__value, User):
             return self.username == __value.username
-        
+
     def __str__(self):
         """
         This method overrides the str() function for the User class.
@@ -138,7 +137,7 @@ class User:
             frame = self.pic.ConvertToBitmap()
 
         return frame
-    
+
     def update_audio(self, audio_frame):
         """
         This method updates the user's audio frame.
@@ -148,7 +147,8 @@ class User:
         """
         # If the audio output is not initialized, initialize it.
         if not self.audio_output:
-            self.audio_output = User.audio.open(format=VoiceCall.FORMAT, channels=VoiceCall.CHANNELS, rate=VoiceCall.RATE, output=True,
+            self.audio_output = User.audio.open(format=VoiceCall.FORMAT, channels=VoiceCall.CHANNELS,
+                                                rate=VoiceCall.RATE, output=True,
                                                 frames_per_buffer=VoiceCall.CHUNK)
         # Write the audio frame to the audio output.
         self.audio_output.write(audio_frame)
@@ -171,7 +171,7 @@ class UserBox(wx.Panel):
         super(UserBox, self).__init__(parent)
 
         # Define the relative size of the profile picture
-        self.RELATIVE_PIC_SIZE = 0.04 * pic_size/6
+        self.RELATIVE_PIC_SIZE = 0.04 * pic_size / 6
 
         # Store the parent and user objects
         self.parent = parent
@@ -211,7 +211,7 @@ class UserBox(wx.Panel):
             self.sizer.AddSpacer(10)
 
             # Add the user profile picture to the horizontal sizer
-            pic = self.user.pic\
+            pic = self.user.pic \
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
             self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
@@ -220,7 +220,7 @@ class UserBox(wx.Panel):
 
         else:
             # Add the user profile picture to the horizontal sizer
-            pic = self.user.pic\
+            pic = self.user.pic \
                 .Scale(wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE, wx.DisplaySize()[0] * self.RELATIVE_PIC_SIZE)
             bitmap = wx.Bitmap(pic)
             self.static_pic = wx.StaticBitmap(self, bitmap=bitmap)
@@ -608,7 +608,7 @@ class SettingsDialog(wx.Dialog):
             notification_box.Play()
         else:
             wx.MessageBox('Username change failed', 'Error', wx.OK | wx.ICON_ERROR)
-    
+
     def onPasswordAnswer(self, is_valid):
         """
         Handles the answer from the server regarding the password change
@@ -881,14 +881,16 @@ class CallGrid(wx.GridSizer):
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
                 break
-        
+
         self.Layout()
         self.parent.Layout()
+
 
 class CallWindow(wx.Frame):
     """
     A class for creating a call window.
     """
+
     def __init__(self, parent, title, chat_id, key, video=False):
         """
         Initializes a CallWindow object.
@@ -979,7 +981,7 @@ class CallWindow(wx.Frame):
         self.SetSizer(self.sizer)
 
         self.Layout()
-        
+
         # Subscribe to the events
         pub.subscribe(self.onVoiceInfo, 'voice_info')
         pub.subscribe(self.onVideoInfo, 'video_info')
@@ -993,7 +995,7 @@ class CallWindow(wx.Frame):
         # Initialize the voice and video call objects
         self.voice_call = VoiceCall(self, self.chat_id, self.key)
         self.video_call = VideoCall(self, self.chat_id, self.key) if self.is_video else None
-    
+
     def onVoiceInfo(self, chat_id, ips, usernames):
         """
         Called when the client receives a voice info event.
@@ -1089,6 +1091,7 @@ class MessagesPanel(ScrolledPanel):
     """
     Panel that contains all the messages in a chat.
     """
+
     def __init__(self, parent):
         """
         Initializes the MessagesPanel.
@@ -1206,7 +1209,6 @@ class MessagesPanel(ScrolledPanel):
         self.Refresh()
         self.SetupScrolling()
 
-
     def reset_messages(self):
         """
         Clears all messages from the MessagesPanel.
@@ -1219,6 +1221,7 @@ class ChatTools(wx.Panel):
     """
     A panel containing the tools for sending messages and files.
     """
+
     def __init__(self, parent, chat_id):
         """
         Initializes the ChatTools panel.
@@ -1241,16 +1244,18 @@ class ChatTools(wx.Panel):
         # Set the font on the text control
         self.message_input.SetFont(font)
         self.message_input.SetMaxLength(self.MAX_MESSAGE_LENGTH)
-        
+
         self.send_file_button = wx.Button(self, label='')
         file_image = wx.Image("assets/file.png", wx.BITMAP_TYPE_ANY)
-        file_image = resize_image(file_image, self.send_file_button.GetSize()[0]*2, self.send_file_button.GetSize()[1]*2)
+        file_image = resize_image(file_image, self.send_file_button.GetSize()[0] * 2,
+                                  self.send_file_button.GetSize()[1] * 2)
         self.send_file_button.SetBitmap(file_image.ConvertToBitmap())
         self.send_file_button.Bind(wx.EVT_BUTTON, self.on_file_choose)
 
         self.send_button = wx.Button(self, label='')
         file_image = wx.Image("assets/send.png", wx.BITMAP_TYPE_ANY)
-        file_image = resize_image(file_image, self.send_file_button.GetSize()[0]*3, self.send_file_button.GetSize()[1]*3)
+        file_image = resize_image(file_image, self.send_file_button.GetSize()[0] * 3,
+                                  self.send_file_button.GetSize()[1] * 3)
         self.send_button.SetBitmap(file_image.ConvertToBitmap())
         self.send_button.Bind(wx.EVT_BUTTON, self.onMessageSend)
 
@@ -1285,7 +1290,8 @@ class ChatTools(wx.Panel):
             # Send the message to the server
             self.parent.GetParent().parent.parent.files_com.send_data(msg)
             # File description msg
-            msg = Protocol.file_description(User.this_user.username, self.chat_id, os.path.basename(file_path), len(file_contents), file_hash)
+            msg = Protocol.file_description(User.this_user.username, self.chat_id, os.path.basename(file_path),
+                                            len(file_contents), file_hash)
             # Send the msg to the server
             self.parent.GetParent().parent.parent.chats_com.send_data(msg)
 
@@ -1315,6 +1321,7 @@ class ChatMessage(wx.Panel):
     """
     A panel for displaying a chat message- The user box alongside the text message split into lines
     """
+
     def __init__(self, parent, user: User, message: str, align_right=False):
         """
         Initializes the ChatMessage panel.
@@ -1360,11 +1367,13 @@ class ChatMessage(wx.Panel):
 
 
 class FileDescription(wx.Panel):
-        """
+    """
         A panel for displaying a file description- The user box alongside the file name and size
         """
-        def __init__(self, parent, user: User, chat_id: int, file_name: str, file_size: int, file_hash: str, align_right=False):
-            """
+
+    def __init__(self, parent, user: User, chat_id: int, file_name: str, file_size: int, file_hash: str,
+                 align_right=False):
+        """
             Initializes the FileDescription panel.
             :param parent: The parent of the FileDescription panel.
             :type parent: wx.Window
@@ -1381,59 +1390,60 @@ class FileDescription(wx.Panel):
             :param align_right: Whether to align the file description to the right of the panel.
             :type align_right: bool
             """
-            super(FileDescription, self).__init__(parent)
-            self.file_name = file_name
-            self.file_size = file_size
-            self.sender = user
-            self.file_hash = file_hash
-            self.chat_id = chat_id
-            self.parent = parent
-            self.GAP = 40
-            self.SetBackgroundColour(wx.Colour(194, 194, 194))
+        super(FileDescription, self).__init__(parent)
+        self.file_name = file_name
+        self.file_size = file_size
+        self.sender = user
+        self.file_hash = file_hash
+        self.chat_id = chat_id
+        self.parent = parent
+        self.GAP = 40
+        self.SetBackgroundColour(wx.Colour(194, 194, 194))
 
-            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            user_box = UserBox(self, user, align_right=align_right)
+        user_box = UserBox(self, user, align_right=align_right)
 
-            if not align_right:
-                self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
-                self.sizer.AddSpacer(self.GAP)
+        if not align_right:
+            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
+            self.sizer.AddSpacer(self.GAP)
 
-            # Add a label with the file name
-            self.file_name_label = wx.StaticText(self, label=file_name)
-            self.sizer.Add(self.file_name_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        # Add a label with the file name
+        self.file_name_label = wx.StaticText(self, label=file_name)
+        self.sizer.Add(self.file_name_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
 
-            # Add a label with the file size
-            self.file_size_label = wx.StaticText(self, label=f'{round(file_size/1000000, 2)} mb')
-            self.sizer.Add(self.file_size_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        # Add a label with the file size
+        self.file_size_label = wx.StaticText(self, label=f'{round(file_size / 1000000, 2)} mb')
+        self.sizer.Add(self.file_size_label, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
 
-            # Add a button to download the file
-            self.download_button = wx.Button(self, label='Download')
-            self.download_button.Bind(wx.EVT_BUTTON, self.onDownload)
-            self.sizer.Add(self.download_button, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+        # Add a button to download the file
+        self.download_button = wx.Button(self, label='Download')
+        self.download_button.Bind(wx.EVT_BUTTON, self.onDownload)
+        self.sizer.Add(self.download_button, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
 
-            if align_right:
-                self.sizer.AddSpacer(self.GAP)
-                self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
+        if align_right:
+            self.sizer.AddSpacer(self.GAP)
+            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
 
-            self.SetSizer(self.sizer)
+        self.SetSizer(self.sizer)
 
-        def onDownload(self, event):
-            """
+    def onDownload(self, event):
+        """
             Called when the user clicks the download button.
             :param event: The event that triggered the function call.
             :type event: wx.Event
             """
-            # Construct a message to request the file from the server
-            msg = Protocol.request_file(self.file_hash)
-            # Send the message to the server
-            self.parent.parent.GetParent().parent.parent.general_com.send_data(msg)
+        # Construct a message to request the file from the server
+        msg = Protocol.request_file(self.file_hash)
+        # Send the message to the server
+        self.parent.parent.GetParent().parent.parent.general_com.send_data(msg)
 
 
 class GroupsSwitcher(wx.BoxSizer):
     """
     A box sizer for switching between groups
     """
+
     def __init__(self, parent):
         """
         Initializes the GroupsSwitcher sizer.
@@ -1485,7 +1495,8 @@ class GroupsSwitcher(wx.BoxSizer):
                     filename = msg['file_name']
                     file_size = msg['file_size']
                     file_hash = msg['file_hash']
-                    self.groups[chat_id][0].add_file_description_top(sender_user, chat_id, filename, file_size, file_hash)
+                    self.groups[chat_id][0].add_file_description_top(sender_user, chat_id, filename, file_size,
+                                                                     file_hash)
 
     def onTextMessage(self, sender, chat_id, raw_message):
         """
@@ -1656,6 +1667,7 @@ class FriendRequestsPanel(ScrolledPanel):
     """
     The panel that contains the friend requests.
     """
+
     def __init__(self, parent):
         """
         The constructor.
@@ -1751,13 +1763,13 @@ class CreateGroupDialog(wx.Dialog):
         # Create a sizer to lay out the controls vertically
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(wx.StaticText(self, label="Group name:"), flag=wx.ALL, border=5)
-        sizer.Add(self.name_textctrl, flag=wx.EXPAND|wx.ALL, border=5)
-        sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(self.name_textctrl, flag=wx.EXPAND | wx.ALL, border=5)
+        sizer.Add(wx.StaticLine(self), flag=wx.EXPAND | wx.ALL, border=5)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         button_sizer.AddStretchSpacer()
         button_sizer.Add(create_button, flag=wx.ALL, border=5)
         button_sizer.Add(cancel_button, flag=wx.ALL, border=5)
-        sizer.Add(button_sizer, flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add(button_sizer, flag=wx.EXPAND | wx.ALL, border=5)
 
         # Set the sizer for the dialog
         self.SetSizer(sizer)
@@ -1787,6 +1799,7 @@ class AddFriendDialog(wx.Dialog):
     """
     A dialog for adding a new friend.
     """
+
     def __init__(self, parent):
         """
         The constructor.
@@ -1851,6 +1864,7 @@ class CallDialog(wx.PopupTransientWindow):
     """
     A dialog for accepting or declining a call.
     """
+
     def __init__(self, parent, message, chat_id, call_type):
         """
         The constructor.
@@ -1888,16 +1902,16 @@ class CallDialog(wx.PopupTransientWindow):
         # Create the main sizer
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(message_label, 0, wx.ALL, 10)
-        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER|wx.ALL, 10)
+        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
 
         # Set the sizer and size the dialog
         self.SetSizer(sizer)
         self.Fit()
 
+        size_to_set = wx.GetDisplaySize() * 0.2
         # Center the dialog on the parent window
-        self.Position(wx.Point(parent.GetPosition().x + parent.GetSize().x/2 - self.GetSize().x/2,
-                                parent.GetPosition().y + parent.GetSize().y/2 - self.GetSize().y/2))
-
+        self.Position(wx.Point(parent.GetPosition().x + parent.GetSize().x / 2 - self.GetSize().x / 2,
+                               parent.GetPosition().y + parent.GetSize().y / 2 - self.GetSize().y / 2), size_to_set)
 
     def on_join(self, event):
         """
@@ -1941,17 +1955,3 @@ def resize_image(image, target_width, target_height):
 
     image = image.Scale(new_width, new_height, quality=wx.IMAGE_QUALITY_HIGH)
     return image
-
-
-
-
-
-
-
-
-
-
-
-
-
-
