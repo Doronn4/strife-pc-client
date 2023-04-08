@@ -20,6 +20,7 @@ class VoiceCall:
         """
         Creates a new VoiceCall object to handle the voice call
         :param chat_id: The chat/group chat id of the call
+        :param key: The symmetrical key of the call
         """
         # The voice port
         self.PORT = 4000
@@ -49,6 +50,9 @@ class VoiceCall:
         self._start()
 
     def _start(self):
+        """
+        Starts the call
+        """
         # Creates a UDP socket
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.PORT))
@@ -57,6 +61,9 @@ class VoiceCall:
         threading.Thread(target=self.send_audio).start()
 
     def send_audio(self):
+        """
+        Sends the audio to the other users in the call
+        """
         while self.active:
             if not self.muted:
                 data = self.audio_input.read(self.CHUNK)
@@ -69,6 +76,9 @@ class VoiceCall:
                     self.socket.sendto(data, (ip, self.PORT))
 
     def receive_audio(self):
+        """
+        Receives the audio from the other users in the call
+        """
         while self.active:
             try:
                 data, addr = self.socket.recvfrom(self.CHUNK*2 + 32)
@@ -89,19 +99,31 @@ class VoiceCall:
             self.call_members[ip].update_audio(data)
 
     def add_user(self, ip, user):
+        """
+        Adds a user to the call
+        """
         self.call_members[ip] = user
         wx.CallAfter(self.parent.call_grid.add_user, user)
 
 
     def remove_user(self, ip):
+        """
+        Removes a user from the call
+        """
         if ip in self.call_members.keys():
             self.parent.call_grid.remove_user(self.call_members[ip])
             del self.call_members[ip]
 
     def toggle_mute(self):
+        """
+        Toggles the mic mute
+        """
         self.muted = not self.muted
 
     def terminate(self):
+        """
+        Terminates the call
+        """
         self.active = False
         self.audio_input.close()
         for user in self.call_members.values():

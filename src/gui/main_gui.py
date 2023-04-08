@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 import wx
 import wx.adv
@@ -13,10 +14,17 @@ from src.core.keys_manager import KeysManager
 
 
 class MainPanel(wx.Panel):
+    """
+    The main panel of the app
+    """
     known_users = []
     my_friends = []
 
     def __init__(self, parent):
+        """
+        Creates a new MainPanel object
+        :param parent: The parent window
+        """
         super(MainPanel, self).__init__(parent)
         self.STRIFE_LOGO_IMAGE = wx.Image("assets/strife_logo.png", wx.BITMAP_TYPE_ANY)
         self.VOICE_BUTTON_IMAGE = wx.Image("assets/voice.png", wx.BITMAP_TYPE_ANY)
@@ -30,11 +38,12 @@ class MainPanel(wx.Panel):
         self.parent = parent
 
         # Sub windows
-        self.settings_window = gui_util.SettingsDialog(self)
+        self.settings_window = None
         self.voice_call_window = None  # temp ******
         self.video_call_window = None  # temp ******
         self.group_creation_window = gui_util.CreateGroupDialog(self)
         self.add_friend_window = gui_util.AddFriendDialog(self)
+        self.incoming_calls = {}
 
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -126,6 +135,12 @@ class MainPanel(wx.Panel):
         self.load_friends()
     
     def onUserPic(self, contents, username):
+        """
+        Update the user's picture
+        :param contents: The picture's contents
+        :param username: The user's username
+        :return: None
+        """
         if username == gui_util.User.this_user.username:
             path = FileHandler.save_pfp(contents, username)
             gui_util.User.this_user.update_pic()
@@ -134,10 +149,21 @@ class MainPanel(wx.Panel):
             MainPanel.get_user_by_name(username).update_pic()
 
     def onUserStatus(self, username, status):
+        """
+        Update the user's status
+        :param username: The user's username
+        :param status: The user's status
+        :return: None
+        """
         user = MainPanel.get_user_by_name(username)
         user.update_status(status)
 
     def onChatsList(self, chats):
+        """
+        Update the chats list
+        :param chats: The chats list
+        :return: None
+        """
         # Reset lists
         MainPanel.my_friends = []
         self.friends_panel.reset_friends()
@@ -180,6 +206,10 @@ class MainPanel(wx.Panel):
             self.parent.general_com.send_data(msg)
 
     def load_friends(self):
+        """
+        Load the user's friends list
+        :return: None
+        """
         # Request the list of chats
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
@@ -189,11 +219,21 @@ class MainPanel(wx.Panel):
         self.parent.general_com.send_data(msg)
 
     def onAddFriendAnswer(self, is_valid):
+        """
+        Handle the answer to the add friend request
+        :param is_valid: True if the friend's username is valid, False otherwise
+        :return: None
+        """
         if not is_valid:
             wx.MessageBox("Friend's username doesn't exist", 'Error', wx.OK | wx.ICON_ERROR)
             self.onAddFriend(None)
 
     def onAddFriend(self, event):
+        """
+        Handle the add friend button click
+        :param event: The event
+        :return: None
+        """
         # Check if the window is already shown
         if not self.add_friend_window.IsShown():
             # Create a new dialog
@@ -210,6 +250,13 @@ class MainPanel(wx.Panel):
                 self.parent.general_com.send_data(msg)
 
     def onFriendAdded(self, friend_username, friends_key, chat_id):
+        """
+        Handle the friend added event
+        :param friend_username: The friend's username
+        :param friends_key: The friend's key
+        :param chat_id: The chat's id
+        :return: None
+        """
         # Request chats list from the server
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
@@ -225,11 +272,21 @@ class MainPanel(wx.Panel):
         notification.Show()
 
     def onFriendRequest(self, adder_username, is_silent):
+        """
+        Handle the friend request event
+        :param adder_username: The username of the user who sent the request
+        :param is_silent: True if the request is silent, False otherwise
+        :return: None
+        """
         self.friend_requests_panel.add_friend_request(MainPanel.get_user_by_name(adder_username))
         if not is_silent:
             notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}',
                                                       self, wx.ICON_INFORMATION)
             notification.Show()
+
+        # Request the user's profile pic
+        msg = Protocol.request_user_pfp(adder_username)
+        self.parent.general_com.send_data(msg)
 
     def onChatSelect(self, chat_id: int):
         """
@@ -249,14 +306,34 @@ class MainPanel(wx.Panel):
         :return: -
         :rtype: -
         """
-        if not self.settings_window.IsShown():
+        if not self.settings_window or not self.settings_window.IsShown():
             self.settings_window = gui_util.SettingsDialog(self)
             self.settings_window.Show()
 
-    def check_group_name(self, name) -> str:
-        pass
+    @staticmethod
+    def check_group_name(name):
+        """
+        Checks if the group name is valid
+        :param name: The group name
+        :return: The error message if the name is invalid, None otherwise
+        """
+        if len(name) < 3:
+            return "Group name must be at least 3 characters long"
+        if len(name) > 20:
+            return "Group name must be at most 20 characters long"
+        if not name.isalnum():
+            return "Group name must contain only letters and numbers"
+        return None
 
     def onGroupJoin(self, group_name, chat_id):
+        """
+        Called when the user joins a group
+        :param group_name: The group name
+        :type group_name: str
+        :param chat_id: The chat id
+        :type chat_id: int
+        :return: -
+        """
         self.friends_panel.add_user(gui_util.User(username=group_name, chat_id=chat_id))
         self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
 
@@ -285,19 +362,63 @@ class MainPanel(wx.Panel):
                 self.parent.general_com.send_data(msg)
 
     def onVoiceStart(self, chat_id):
-        # TEMP
-        msg = Protocol.join_voice(chat_id)
-        self.parent.general_com.send_data(msg)
-        self.onVoice(None)
+        """
+        Called when the user receives a voice call
+        :param chat_id: The chat id
+        :type chat_id: int
+        :return: -
+        """
+        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+        self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming voice call from {title}", chat_id, 'voice')
+        # Show the dialog
+        self.incoming_calls[chat_id].Popup()
 
     def onVideoStart(self, chat_id):
-        # TEMP
-        msg = Protocol.join_video(chat_id)
-        self.parent.general_com.send_data(msg)
-        self.onVideo(None)
+        """
+        Called when the user receives a video call
+        :param chat_id: The chat id
+        :type chat_id: int
+        :return: -
+        """
+        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+        self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id, 'video')
+        # Show the dialog
+        self.incoming_calls[chat_id].Popup()
 
+    def on_join(self, chat_id):
+        """
+        Called when the user accepts an incoming call
+        :param chat_id: The chat id
+        :type chat_id: int
+        :return: -
+        """
+        dialog = self.incoming_calls[chat_id]
+        if dialog.call_type == 'video':
+            msg = Protocol.join_video(chat_id)
+        else:
+            msg = Protocol.join_voice(chat_id)
+        
+        dialog.Dismiss()
+        del self.incoming_calls[chat_id]
+        self.parent.general_com.send_data(msg)
+
+    def on_decline(self, chat_id):
+        """
+        Called when the user declines an incoming call
+        :param chat_id: The chat id
+        :type chat_id: int
+        :return: -
+        """
+        dialog = self.incoming_calls[chat_id]
+        dialog.Dismiss()
+        del self.incoming_calls[chat_id]
 
     def onVoice(self, event):
+        """
+        Called when the user presses the voice call button
+        :param event: The wx event
+        :type event: wx.Event
+        """
         if not self.video_call_window and not self.voice_call_window:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
             key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
@@ -320,10 +441,14 @@ class MainPanel(wx.Panel):
             self.parent.general_com.send_data(msg)
 
     def onLogout(self, event):
+        """
+        Called when the user presses the logout button
+        :param event: The wx event
+        :type event: wx.Event
+        :return: -
+        """
         # Handle logging out logic
         # Send a logout message to the server
-        #msg = Protocol.sign_out(gui_util.User.this_user.username)
-        #self.parent.general_com.send_data(msg)
 
         # Clear the current user
         gui_util.User.this_user = None
@@ -339,12 +464,29 @@ class MainPanel(wx.Panel):
             self.add_friend_window.Close()
         if self.settings_window:
             self.settings_window.Close()
+        for dialog in self.incoming_calls.values():
+            dialog.Dismiss()
 
+        self.incoming_calls = {}
+        MainPanel.known_users = []
+        MainPanel.my_friends = []
+        self.friends_panel.reset_friends()
+        self.groups_panel.sizer.reset_groups()
+        threading.Thread(target=lambda: self.parent.general_com.reconnect()).start()
+        threading.Thread(target=lambda: self.parent.chats_com.reconnect()).start()
+        threading.Thread(target=lambda: self.parent.files_com.reconnect()).start()
         # Move back to the login panel
         self.parent.panel_switcher.Show(self.parent.login_panel)
 
     @staticmethod
     def get_user_by_name(username):
+        """
+        Gets a user by his name
+        :param username: The user's name
+        :type username: str
+        :return: The user object
+        :rtype: gui_util.User
+        """
         user_found = None
         for user in MainPanel.known_users:
             if user.username == username:
@@ -358,6 +500,13 @@ class MainPanel(wx.Panel):
     
     @staticmethod
     def get_name_by_id(id):
+        """
+        Gets a user's name by his id
+        :param id: The user's id
+        :type id: int
+        :return: The user's name
+        :rtype: str
+        """
         name = ''
         for user in MainPanel.known_users:
             if user.chat_id == id:
@@ -368,7 +517,23 @@ class MainPanel(wx.Panel):
 
 
 class MainFrame(wx.Frame):
+    """
+    The main frame of the application
+    """
     def __init__(self, parent, title, general_com, chats_com, files_com):
+        """
+        The constructor
+        :param parent: The parent window
+        :type parent: wx.Window
+        :param title: The title of the window
+        :type title: str
+        :param general_com: The general communication object
+        :type general_com: ClientCom
+        :param chats_com: The chats communication object
+        :type chats_com: ClientCom
+        :param files_com: The files communication object
+        :type files_com: ClientCom
+        """
         self.RELATIVE_BUTTON_SIZE = 0.04
         self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
         size = wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE
@@ -390,16 +555,25 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
 
     def move_to_main(self):
+        """
+        Moves to the main panel
+        :return: -
+        """
         self.main_panel = MainPanel(self)
         self.panel_switcher.add_panel(self.main_panel)
         self.panel_switcher.Show(self.main_panel)
 
     def onClose(self, event):
-        # TODO: add things
+        """
+        Called when the user presses the close button
+        :param event: The wx event
+        :type event: wx.Event
+        :return: -
+        """
         KeysManager.save_keys()
+        self.general_com.close()
+        self.chats_com.close()
+        self.files_com.close()
+        wx.GetApp().ExitMainLoop()
         event.Skip()
 
-
-def restart_program():
-    python = sys.executable
-    os.execl(python, python, 'src/core/main.py')

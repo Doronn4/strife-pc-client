@@ -123,7 +123,7 @@ class ClientCom:
                 self.running = False
             else:
                 try:
-                    dec_data = AESCipher.decrypt(self.aes_key, data)
+                    dec_data = AESCipher.decrypt(self.aes_key, data.decode())
                 except Exception:
                     pass
                 else:
@@ -173,3 +173,20 @@ class ClientCom:
         self.running = False
         self.socket = None  # Close socket connection
 
+    def reconnect(self):
+        """
+        Reconnects to the server
+        :return: -
+        :rtype: -
+        """
+        # Close the socket connection and reset the variables
+        self.running = False
+        self.socket.close()
+        self.server_key = None
+        self.rsa = RSACipher()
+        self.aes_key = None
+        self.socket = socket.socket()
+
+        # Start the main thread
+        self.main_thread = threading.Thread(target=self._main_loop)
+        self.main_thread.start()

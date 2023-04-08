@@ -6,14 +6,18 @@ import wx
 import numpy
 from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler
-import src.gui.main_gui as main_gui
-
+import src.gui.gui_util as gui_util
 
 class VideoCall:
+    """
+    A class to handle the video call
+    """
+    
     def __init__(self, parent, chat_id: int, key: str):
         """
         Creates a new VideoCall object to handle the video call
         :param chat_id: The chat id of the call
+        :param key: The symmetrical key of the call
         """
         # The quality of the video frame
         self.QUALITY = 60
@@ -44,10 +48,17 @@ class VideoCall:
         self._start()
 
     def send_video(self):
+        """
+        Sends the video to the other users in the call
+        """
         while self.active:
             # Send video only if the flag is on
             if self.transmit_video:
                 frame = self.camera.read()
+
+                # Update the current user's video
+                gui_util.User.this_user.update_video(frame)
+
                 # Compress the frame to jpg format
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
@@ -61,6 +72,9 @@ class VideoCall:
                 time.sleep((1/self.FPS))
 
     def receive_videos(self):
+        """
+        Receives the video from the other users in the call
+        """
         while self.active:
             try:
                 # Receive the frame
@@ -75,6 +89,8 @@ class VideoCall:
             # Convert the buffer received to an image
             buffer = numpy.frombuffer(data, numpy.uint8)
             frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
+            # Convert to RGB format
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Get the ip of the sender
             ip = addr[0]
@@ -89,19 +105,31 @@ class VideoCall:
             self.ips_users[ip].update_video(frame)
 
     def add_user(self, ip, user):
+        """
+        Adds a user to the call
+        """
         if ip not in self.ips_users.keys():
             self.ips_users[ip] = user
             wx.CallAfter(self.parent.call_grid.add_user, user)
 
     def remove_user(self, ip):
+        """
+        Removes a user from the call
+        """
         if ip in self.ips_users.keys():
             self.parent.call_grid.remove_user(self.ips_users[ip])
             del self.ips_users[ip]
 
     def toggle_video(self):
+        """
+        Toggles the video transmission
+        """
         self.transmit_video = not self.transmit_video
 
     def _start(self):
+        """
+        Starts the video call
+        """
         self.active = True
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('0.0.0.0', self.PORT))
@@ -110,6 +138,9 @@ class VideoCall:
         threading.Thread(target=self.send_video).start()
 
     def terminate(self):
+        """
+        Terminates the video call
+        """
         self.active = False
         self.camera.close()
         self.socket.close()

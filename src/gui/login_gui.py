@@ -1,9 +1,6 @@
-import os
-
 import src.gui.gui_util as gui_util
 from src.core.client_protocol import Protocol
 import wx
-from src.gui.gui_util import PanelsSwitcher
 from pubsub import pub
 from src.core.keys_manager import KeysManager
 
@@ -136,28 +133,38 @@ class RegisterPanel(wx.Panel):
         pub.subscribe(self.onRegisterAnswer, 'register')
 
     def onRegisterAnswer(self, is_valid):
+        """
+        This function is called when the server sends a response to the register request
+        :param is_valid: True if the username is valid, False otherwise
+        :return: None
+        """
         if is_valid:
             self.parent.panel_switcher.Show(self.parent.login_panel)
         else:
             wx.MessageBox('Username already taken', 'Error', wx.OK | wx.ICON_ERROR)
 
     def onRegister(self, event):
+        """
+        This function is called when the user clicks the register button
+        :param event: The event that triggered the function
+        :return: None
+        """
         error_str = ''
         # Get the username and password passed by the user
         username = self.username_input.GetValue()
         password = self.password_input.GetValue()
 
         # Check if username and password are valid (before sending them)
-        error_str = self.check_username(username)
+        error_str = check_username(username)
         if error_str:
             # Pop up dialog with the error string
-            pass
+            wx.MessageBox(error_str, 'Error', wx.OK | wx.ICON_ERROR)
 
         else:
-            error_str = self.check_password(username)
+            error_str = check_password(username)
             if error_str:
                 # Pop up dialog with the error string
-                pass
+                wx.MessageBox(error_str, 'Error', wx.OK | wx.ICON_ERROR)
 
         # Pass the username and password to the main program...
         if not error_str:
@@ -165,13 +172,12 @@ class RegisterPanel(wx.Panel):
             self.parent.general_com.send_data(msg)
 
     def toLogin(self, event):
+        """
+        This function is called when the user clicks the login button
+        :param event: The event that triggered the function
+        :return: None
+        """
         self.parent.panel_switcher.Show(self.parent.login_panel)
-
-    def check_password(self, password: str) -> str:
-        pass
-
-    def check_username(self, username: str) -> str:
-        pass
 
 
 class LoginPanel(wx.Panel):
@@ -284,6 +290,11 @@ class LoginPanel(wx.Panel):
         pub.subscribe(self.onLoginAnswer, 'login')
 
     def onLoginAnswer(self, is_valid):
+        """
+        This function is called when the server answers to the login request
+        :param is_valid: True if the username and password are correct, False otherwise
+        :return: None
+        """
         if is_valid:
             # Load the chats keys with the password
             KeysManager.load_keys(self.password_input.GetValue())
@@ -293,22 +304,27 @@ class LoginPanel(wx.Panel):
             wx.MessageBox('Incorrect username or password', 'Error', wx.OK | wx.ICON_ERROR)
 
     def onLogin(self, event):
+        """
+        This function is called when the user clicks the login button
+        :param event: The event that triggered the function
+        :return: None
+        """
         error_str = ''
         # Get the username and password passed by the user
         username = self.username_input.GetValue()
         password = self.password_input.GetValue()
 
         # Check if username and password are valid (before sending them)
-        error_str = self.check_username(username)
+        error_str = check_username(username)
         if error_str:
             # Pop up dialog with the error string
-            pass
+            wx.MessageBox(error_str, 'Error', wx.OK | wx.ICON_ERROR)
 
         else:
-            error_str = self.check_password(username)
+            error_str = check_password(username)
             if error_str:
                 # Pop up dialog with the error string
-                pass
+                wx.MessageBox(error_str, 'Error', wx.OK | wx.ICON_ERROR)
 
         # Pass the username and password to the main program...
         if not error_str:
@@ -317,70 +333,34 @@ class LoginPanel(wx.Panel):
             self.parent.general_com.send_data(msg)
 
     def toRegister(self, event):
+        """
+        This function is called when the user clicks the register button (switches to the register panel)
+        """
         self.parent.panel_switcher.Show(self.parent.register_panel)
 
-    def check_password(self, password: str) -> str:
-        pass
 
-    def check_username(self, username: str) -> str:
-        pass
-
-
-class LoginFrame(wx.Frame):
+def check_password(password: str) -> str:
     """
-    The login window for the strife system (Logging in and registering)
+    Checks if the password is valid (returns an error string if not)
+    :param password: The password to check
+    :return: An error string if the password is invalid, an empty string otherwise
     """
+    if len(password) < 3:
+        return 'Password must be at least 3 characters long'
+    elif len(password) > 16:
+        return 'Password must be at most 16 characters long'
+    else:
+        return None
 
-    def __init__(self, parent, title, app):
-        self.RELATIVE_SIZE = 0.5  # The relative size of the window to the screen
-        size = wx.DisplaySize()[0] * self.RELATIVE_SIZE * 0.75, wx.DisplaySize()[1] * self.RELATIVE_SIZE
-        super(LoginFrame, self).__init__(parent, title=title, size=size)
-
-        self.SetIcon(wx.Icon("assets/strife_logo_round.ico", wx.BITMAP_TYPE_ICO))
-
-        self.app = app
-        self.login_panel = LoginPanel(self)
-        self.register_panel = RegisterPanel(self)
-
-        self.panel_switcher = PanelsSwitcher(self, [self.login_panel, self.register_panel])
-
-    def onLogin(self, event):
-        error_str = ''
-        # Get the username and password passed by the user
-        username = self.login_panel.username_input.GetValue()
-        password = self.login_panel.password_input.GetValue()
-
-        # Check if username and password are valid (before sending them)
-        error_str = self.check_username(username)
-        if error_str:
-            # Pop up dialog with the error string
-            pass
-
-        else:
-            error_str = self.check_password(username)
-            if error_str:
-                # Pop up dialog with the error string
-                pass
-
-        # Pass the username and password to the main program...
-        if not error_str:
-            pass
-            # login_event = LoginEvent(EVT_LOGIN, self.GetId())
-            # login_event.set_credentials(username, password)
-            # # Send the event
-            # wx.PostEvent(self.app, login_event)
-
-    def toRegister(self, event):
-        self.panel_switcher.Show(self.register_panel)
-
-    def onRegister(self, event):
-        pass
-
-    def toLogin(self, event):
-        self.panel_switcher.Show(self.login_panel)
-
-    def check_password(self, password: str) -> str:
-        pass
-
-    def check_username(self, username: str) -> str:
-        pass
+def check_username(username: str) -> str:
+    """
+    Checks if the username is valid (returns an error string if not)
+    :param username: The username to check
+    :return: An error string if the username is invalid, an empty string otherwise
+    """
+    if len(username) < 3:
+        return 'Username must be at least 3 characters long'
+    elif len(username) > 16:
+        return 'Username must be at most 16 characters long'
+    else:
+        return None

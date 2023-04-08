@@ -18,7 +18,8 @@ class RSACipher:
         self.RSA_key = RSA.generate(RSACipher.KEY_SIZE)
         self.RSA_cipher = PKCS1_v1_5.new(self.RSA_key)
 
-    def encrypt(self, data, public_key):
+    @staticmethod
+    def encrypt(data, public_key):
         """
         Encrypts a message/data with the given public key
         :param data: The data to encrypt
@@ -49,7 +50,8 @@ class RSACipher:
         """
         return self.RSA_key.publickey().exportKey().decode()
 
-    def get_public_key_from_string(self, key):
+    @staticmethod
+    def get_public_key_from_string(key):
         """
         Returns a public key from a PEM encoded string
         """
@@ -202,26 +204,3 @@ class AESCipher:
         """
         return hashlib.sha256(os.urandom(32)).hexdigest()[:32]
 
-
-if __name__ == '__main__':
-    # # Test aes
-    # aes = AESCipher()
-    # raw = 'ahdraokrlp\n'*20
-    # print(raw)
-    # key = AESCipher.generate_key()
-    # print(len(key))
-    # enc = aes.encrypt(raw.encode(), key)
-    # print('enc', len(enc))
-    # print('raw', len(raw.encode()))
-    # print('diff ', str(len(enc) - len(raw.encode())))
-    # dec = aes.decrypt(enc, key).decode()
-    # assert dec == raw
-
-    # TESt rsa
-    my_rsa = RSACipher()
-    raw = 'hello i am doron!'
-    enc = my_rsa.encrypt(raw, my_rsa.get_string_public_key())
-    #print(enc)
-    dec = my_rsa.decrypt(enc).decode()
-    #print(dec)
-    assert raw == dec

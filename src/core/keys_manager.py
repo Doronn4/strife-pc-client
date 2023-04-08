@@ -28,7 +28,6 @@ class KeysManager:
         :param keys_path: A string representing the directory path.
         :type keys_path: str
         :return: None
-        :rtype: None
         """
         # Initializes the AESCipher object
         KeysManager.aes = AESCipher()
@@ -46,7 +45,6 @@ class KeysManager:
         :param password: A string representing the password.
         :type password: str
         :return: None
-        :rtype: None
         """
         # If password is not given, use last_password attribute.
         if not password:
@@ -74,7 +72,6 @@ class KeysManager:
         :param password: A string representing the password.
         :type password: str
         :return: None
-        :rtype: None
         """
         contents = None
         password_hash = hashlib.sha256(password.encode()).hexdigest()[:32]
@@ -125,20 +122,8 @@ class KeysManager:
         :param key: the key to add
         :type key: str
         :return: None
-        :rtype: None
         """
         KeysManager.chats_keys[chat_id] = key
         KeysManager.save_keys()
-
-
-if __name__ == '__main__':
-    KeysManager.initialize('G:\\Cyber\Strife\\strife_pc_client\\keys')
-    # KeysManager.add_key(69, AESCipher.generate_key())
-    # KeysManager.add_key(420, AESCipher.generate_key())
-    # KeysManager.save_keys('aaaa')
-    KeysManager.load_keys('doron1234')
-    print(KeysManager.get_chat_key(69))
-    print(KeysManager.get_chat_key(420))
-
 
 

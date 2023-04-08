@@ -104,7 +104,7 @@ class CameraHandler:
             except Exception as e:
                 raise Exception('Invalid height or width')
 
-    def get_size(self) -> (int, int):
+    def get_size(self):
         """
         :return: The size of the camera frame (width, height)
         """

@@ -1,7 +1,7 @@
 import hashlib
 import os
-import pyaudio
 import threading
+import pyaudio
 import time
 from src.core.client_protocol import Protocol
 import wx
@@ -15,6 +15,7 @@ from src.core.cryptions import AESCipher
 import base64
 from src.call.video_call import VideoCall
 from src.call.voice_call import VoiceCall
+import wx.lib.agw.toasterbox as toaster
 
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
@@ -22,6 +23,9 @@ MAX_PARTICIPANTS = 6
 
 
 class User:
+    """
+    This class represents a user in the Strife application.
+    """
     # This is a class variable that will hold the currently active user object.
     # It is initialized to None.
     this_user = None
@@ -52,10 +56,16 @@ class User:
         self.update_pic()
 
     def __eq__(self, __value: object) -> bool:
+        """
+        This method overrides the == operator for the User class.
+        """
         if isinstance(__value, User):
             return self.username == __value.username
         
     def __str__(self):
+        """
+        This method overrides the str() function for the User class.
+        """
         return f"Username: {self.username}; status: {self.status}; Chatid: {self.chat_id}"
 
     def update_pic(self):
@@ -80,6 +90,9 @@ class User:
                 self.call_on_update.remove(func)
 
     def update_status(self, status):
+        """
+        This method updates the user's status.
+        """
         self.status = status
         for func in self.call_on_update:
             try:
@@ -127,9 +140,17 @@ class User:
         return frame
     
     def update_audio(self, audio_frame):
+        """
+        This method updates the user's audio frame.
+        :param audio_frame: The new audio frame.
+        :type audio_frame: bytes
+        :return: None
+        """
+        # If the audio output is not initialized, initialize it.
         if not self.audio_output:
             self.audio_output = User.audio.open(format=VoiceCall.FORMAT, channels=VoiceCall.CHANNELS, rate=VoiceCall.RATE, output=True,
                                                 frames_per_buffer=VoiceCall.CHUNK)
+        # Write the audio frame to the audio output.
         self.audio_output.write(audio_frame)
 
 
@@ -407,7 +428,6 @@ class UsersScrollPanel(ScrolledPanel):
         :param user: The user object to be added.
         :type user: User
         :return: None
-        :rtype: None
         """
         user_box = UserBox(self, user, self.align_right, onClick=self.handle_click)  # creates a UserBox object
         self.users.append(user_box)  # adds the UserBox object to the list
@@ -444,6 +464,10 @@ class UsersScrollPanel(ScrolledPanel):
         self.SetupScrolling()  # enables scrolling in the panel
 
     def reset_friends(self):
+        """
+        Removes all the UserBox objects from the panel.
+        return: None
+        """
 
         for user in self.users.copy():
             self.remove_user(user.user.username)
@@ -502,6 +526,7 @@ class SettingsDialog(wx.Dialog):
         self.username_sizer.Add(self.name_input, 1, wx.ALIGN_CENTER)
         self.username_sizer.AddSpacer(10)
         self.username_sizer.Add(self.name_submit_button, 1, wx.ALIGN_CENTER)
+        self.name_submit_button.Bind(wx.EVT_BUTTON, self.onUsernameChange)
 
         self.picture_label = wx.StaticText(self, label='Change profile picture:')
         self.picture_label.SetFont(font)
@@ -535,6 +560,7 @@ class SettingsDialog(wx.Dialog):
         self.password_sizer.Add(self.password_input, 1, wx.ALIGN_CENTER)
         self.password_sizer.AddSpacer(10)
         self.password_sizer.Add(self.pass_submit_button, 1, wx.ALIGN_CENTER)
+        self.pass_submit_button.Bind(wx.EVT_BUTTON, self.onPasswordChange)
 
         self.back_button = wx.Button(self, label='Back', size=(100, 50))
         self.back_button.Bind(wx.EVT_BUTTON, self.onBack)
@@ -547,24 +573,146 @@ class SettingsDialog(wx.Dialog):
 
         self.SetSizer(self.sizer)
 
+        pub.subscribe(self.onStatusAnswer, 'status_answer')
+        pub.subscribe(self.onUsernameAnswer, 'username_answer')
+        pub.subscribe(self.onPasswordAnswer, 'password_answer')
+
+    def onStatusAnswer(self, is_valid):
+        """
+        Handles the answer from the server regarding the status change
+        :param is_valid: weather the status change was successful or not
+        :return: None
+        """
+        if is_valid:
+            notification_box = toaster.ToasterBox(self.parent, wx.lib.agw.toasterbox.TB_SIMPLE)
+            notification_box.SetPopupText('Status successfully changed')
+            notification_box.SetPopupPauseTime(2000)  # 2 seconds
+
+            # Show the notification box
+            notification_box.Play()
+        else:
+            wx.MessageBox('Status change failed', 'Error', wx.OK | wx.ICON_ERROR)
+
+    def onUsernameAnswer(self, is_valid):
+        """
+        Handles the answer from the server regarding the username change
+        :param is_valid: weather the username change was successful or not
+        :return: None
+        """
+        if is_valid:
+            # Create a ToasterBox widget to display the notification message
+            notification_box = toaster.ToasterBox(self.parent, wx.lib.agw.toasterbox.TB_SIMPLE)
+            notification_box.SetPopupText('Username successfully changed')
+            notification_box.SetPopupPauseTime(2000)  # 2 seconds
+            # Show the notification box
+            notification_box.Play()
+        else:
+            wx.MessageBox('Username change failed', 'Error', wx.OK | wx.ICON_ERROR)
+    
+    def onPasswordAnswer(self, is_valid):
+        """
+        Handles the answer from the server regarding the password change
+        :param is_valid: weather the password change was successful or not
+        :return: None
+        """
+        if is_valid:
+            # Create a ToasterBox widget to display the notification message
+            notification_box = toaster.ToasterBox(self.parent, wx.lib.agw.toasterbox.TB_SIMPLE)
+            notification_box.SetPopupText('Password successfully changed')
+            notification_box.SetPopupPauseTime(2000)  # 2 seconds
+            # Show the notification box
+            notification_box.Play()
+        else:
+            wx.MessageBox('Password change failed', 'Error', wx.OK | wx.ICON_ERROR)
+
     def onBack(self, event):
+        """
+        Closes the window
+        :param event: The event that triggered the function
+        :return: None
+        """
+        # Unsubscribe from the topics
+        pub.unsubscribe(self.onStatusAnswer, 'status_answer')
+        pub.unsubscribe(self.onUsernameAnswer, 'username_answer')
+        pub.unsubscribe(self.onPasswordAnswer, 'password_answer')
+
         self.Close()
 
     def onPicChange(self, event):
+        """
+        Changes the profile picture of the user
+        :param event: The event that triggered the function
+        :return: None
+        """
+        # The path of the file chosen
         pic_path = self.file_picker.GetPath()
         if pic_path == '':
+            # If no file is chosen, show an error message
             wx.MessageBox('No file chosen', 'Error', wx.OK | wx.ICON_ERROR)
         else:
+            # If a file is chosen, encode it and send it to the server
             pic_contents = FileHandler.load_file(pic_path)
             b64_contents = base64.b64encode(pic_contents).decode()
             msg = Protocol.change_pfp(b64_contents)
             self.parent.parent.files_com.send_data(msg)
 
+    def onUsernameChange(self, event):
+        """
+        Changes the username of the user
+        :param event: The event that triggered the function
+        :return: None
+        """
+        # Get the username from the input field
+        username = self.name_input.GetValue()
+        if username == '':
+            wx.MessageBox('No username chosen', 'Error', wx.OK | wx.ICON_ERROR)
+        else:
+            # If a username is chosen, send it to the server
+            msg = Protocol.change_username(username)
+            self.parent.parent.general_com.send_data(msg)
+
+    def onPasswordChange(self, event):
+        """
+        Changes the password of the user
+        :param event: The event that triggered the function
+        :return: None
+        """
+        # Get the password from the input field
+        password = self.password_input.GetValue()
+        if password == '':
+            wx.MessageBox('No password chosen', 'Error', wx.OK | wx.ICON_ERROR)
+        else:
+            # Pop up a dialog to enter the old password
+            dlg = wx.TextEntryDialog(self, 'Enter your old password', 'Confirm password change')
+            if dlg.ShowModal() == wx.ID_OK:
+                old_password = dlg.GetValue()
+            else:
+                return
+
+            # Pop up a dialog to warn the user that by changing their password, all of their previous chats will be
+            # inaccessible
+            dlg = wx.MessageDialog(self, 'Changing your password will make all of your previous chats inaccessible '
+                                         'the next time you open the app.'
+                                         'Are you sure you want to continue?', 'Warning', wx.YES_NO | wx.ICON_WARNING)
+            if dlg.ShowModal() == wx.ID_NO:
+                return
+
+            # If a password is chosen, send it to the server
+            msg = Protocol.change_password(old_password, password)
+            self.parent.parent.general_com.send_data(msg)
+
     def onStatusChange(self, event):
+        """
+        Changes the status of the user
+        :param event: The event that triggered the function
+        :return: None
+        """
+        # Get the status from the input field
         status = self.status_input.GetValue()
         if status == '':
             wx.MessageBox('No status chosen', 'Error', wx.OK | wx.ICON_ERROR)
         else:
+            # If a status is chosen, send it to the server
             msg = Protocol.change_status(status)
             self.parent.parent.general_com.send_data(msg)
 
@@ -609,6 +757,10 @@ class CallUserPanel(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
     def init_timer(self):
+        """
+        Sets up the timer for getting new frames and refreshing the display.
+        return: None
+        """
         # Set up the timer for getting new frames and refreshing the display
         self.timer = wx.Timer(self)
         self.timer.Start(1000.0 / self.fps)
@@ -691,6 +843,9 @@ class CallGrid(wx.GridSizer):
         # Store the parent object
         self.parent = parent
 
+        # Add the user's own panel to the grid
+        self.add_user(User.this_user)
+
     def add_user(self, user):
         """
         Adds a user panel to the grid.
@@ -704,7 +859,6 @@ class CallGrid(wx.GridSizer):
         self.users_panels.append(CallUserPanel(self.parent, user))
         # Add the panel to the grid with the appropriate flags
         self.Add(self.users_panels[-1], 0, wx.EXPAND, self.BORDER_WIDTH)
-        print(self.GetSize())
         self.Layout()
         self.parent.Layout()
 
@@ -732,11 +886,28 @@ class CallGrid(wx.GridSizer):
         self.parent.Layout()
 
 class CallWindow(wx.Frame):
+    """
+    A class for creating a call window.
+    """
     def __init__(self, parent, title, chat_id, key, video=False):
+        """
+        Initializes a CallWindow object.
+        :param parent: A wxPython parent object.
+        :type parent: wxPython parent object.
+        :param title: The title of the window.
+        :type title: str
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param key: The key of the chat.
+        :type key: str
+        :param video: Whether the call is a video call or not.
+        :type video: bool
+        """
         super(CallWindow, self).__init__(parent, name=title)
         self.SetWindowStyleFlag(wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MINIMIZE_BOX
                                 ^ wx.MAXIMIZE_BOX ^ wx.SYSTEM_MENU ^ wx.CLOSE_BOX)
 
+        # Constants
         self.MUTE_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
         self.MUTED_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
         self.LEAVE_BUTTON_IMAGE = wx.Image("assets/leave.png", wx.BITMAP_TYPE_ANY)
@@ -749,23 +920,34 @@ class CallWindow(wx.Frame):
         # The background color of the window
         self.BACKGROUND_COLOR = STRIFE_BACKGROUND_COLOR
 
+        # Set the size of the window
         size = (wx.DisplaySize()[0] * self.RELATIVE_SIZE, wx.DisplaySize()[1] * self.RELATIVE_SIZE)
         self.SetSize(size)
+        # Set the background color of the window
         self.SetBackgroundColour(self.BACKGROUND_COLOR)
 
+        # Store the chat ID and key
         self.is_video = video
         self.key = key
+        self.chat_id = chat_id
+        # Initialize a dictionary to store the call members
         self.call_members = {}
 
-        self.voice_call = VoiceCall(self, chat_id, key)
-        self.video_call = VideoCall(self, chat_id, key) if video else None
+        # Initialize the voice and video call objects
+        self.voice_call = None
+        self.video_call = None
+        threading.Thread(target=self.init_calls, name='initcalls').start()
 
+        # Initialize the sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
+        # Initialize the call grid
         self.call_grid = CallGrid(self)
 
+        # Initialize the toolbar
         self.toolbar = wx.BoxSizer(wx.HORIZONTAL)
 
+        # Initialize the buttons
         bit = self.MUTE_BUTTON_IMAGE.Scale(
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
             wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
@@ -784,71 +966,144 @@ class CallWindow(wx.Frame):
         self.camera_button = wx.BitmapButton(self, bitmap=bit)
         self.camera_button.Bind(wx.EVT_BUTTON, self.onCameraToggle)
 
+        # Add the buttons to the toolbar
         self.toolbar.Add(self.mute_button, 1, wx.ALIGN_CENTER)
         self.toolbar.Add(self.leave_call_button, 1, wx.ALIGN_CENTER)
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
+        # Add the call grid and toolbar to the sizer
         self.sizer.Add(self.call_grid, 3, wx.EXPAND)
         self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
 
+        # Set the sizer
         self.SetSizer(self.sizer)
 
         self.Layout()
-
+        
+        # Subscribe to the events
         pub.subscribe(self.onVoiceInfo, 'voice_info')
         pub.subscribe(self.onVideoInfo, 'video_info')
         pub.subscribe(self.onVoiceJoined, 'voice_joined')
         pub.subscribe(self.onVideoJoined, 'video_joined')
 
+    def init_calls(self):
+        """
+        Initializes the voice and video call objects.
+        """
+        # Initialize the voice and video call objects
+        self.voice_call = VoiceCall(self, self.chat_id, self.key)
+        self.video_call = VideoCall(self, self.chat_id, self.key) if self.is_video else None
     
     def onVoiceInfo(self, chat_id, ips, usernames):
+        """
+        Called when the client receives a voice info event.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param ips: The IPs of the users in the call.
+        :type ips: list
+        :param usernames: The usernames of the users in the call.
+        :type usernames: list
+        """
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
     def onVideoInfo(self, chat_id, ips, usernames):
+        """
+        Called when the client receives a video info event.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param ips: The IPs of the users in the call.
+        :type ips: list
+        :param usernames: The usernames of the users in the call.
+        :type usernames: list
+        """
         if self.video_call and self.video_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
     def onVoiceJoined(self, chat_id, ip, username):
+        """
+        Called when the client receives a voice joined event.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param ip: The IP of the user who joined.
+        :type ip: str
+        :param username: The username of the user who joined.
+        :type username: str
+        """
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
 
     def onVideoJoined(self, chat_id, ip, username):
+        """
+        Called when the client receives a video joined event.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param ip: The IP of the user who joined.
+        :type ip: str
+        :param username: The username of the user who joined.
+        :type username: str
+        """
         if self.video_call and self.video_call.chat_id == chat_id:
             self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
 
     def get_user_by_ip(self, ip):
+        """
+        Returns the user object of the user with the given IP.
+        :param ip: The IP of the user.
+        :type ip: str
+        """
         return main_gui.MainPanel.get_user_by_name(self.call_members.get(ip))
 
     def onMuteToggle(self, event):
+        """
+        Called when the mute button is pressed.
+        :param event: The event.
+        :type event: wx.Event
+        """
         self.voice_call.toggle_mute()
 
     def onHangup(self, event):
+        """
+        Called when the hangup button is pressed.
+        :param event: The event.
+        :type event: wx.Event
+        """
         self.voice_call.terminate()
         if self.is_video:
             self.video_call.terminate()
-        print('closing done')
         self.Close()
-        print('closed self.')
 
     def onCameraToggle(self, event):
+        """
+        Called when the camera button is pressed.
+        :param event: The event.
+        :type event: wx.Event
+        """
         if self.is_video:
             self.video_call.toggle_video()
 
 
 class MessagesPanel(ScrolledPanel):
+    """
+    Panel that contains all the messages in a chat.
+    """
     def __init__(self, parent):
+        """
+        Initializes the MessagesPanel.
+        """
         super(MessagesPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
         self.MESSAGES_GAP = 10
         self.SetupScrolling()
 
+        # Set the background colour
         self.SetBackgroundColour(wx.Colour(214, 212, 212))
+        # Create a sizer for the MessagesPanel
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-
+        # Set the sizer
         self.SetSizer(self.sizer)
-
+        # Set the parent
         self.parent = parent
 
     def add_text_message(self, sender: User, message: str):
@@ -896,7 +1151,24 @@ class MessagesPanel(ScrolledPanel):
         self.SetupScrolling()
 
     def add_file_description(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
+        """
+        Adds a file description panel to the chat, aligns the message to the left if the sender is not the current user,
+        or to the right if it is.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param sender: User object representing the sender of the message
+        :type sender: User
+        :param file_name: The name of the file.
+        :type file_name: str
+        :param file_size: The size of the file.
+        :type file_size: int
+        :param file_hash: The hash of the file.
+        :type file_hash: str
+        :return: None
+        """
+        # Check if the sender is the current user
         is_current_user = sender == User.this_user
+        # Create a new FileDescription panel with the sender box and message
         file_desc = FileDescription(self, chat_id, sender, file_name, file_size, file_hash, align_right=False)
 
         # Add the ChatMessage panel to the ChatPanel sizer
@@ -908,6 +1180,21 @@ class MessagesPanel(ScrolledPanel):
         self.SetupScrolling()
 
     def add_file_description_top(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
+        """
+        Adds a file description panel to the top of the chat, aligns the message to the left if the sender is not the current user,
+        or to the right if it is.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param sender: User object representing the sender of the message
+        :type sender: User
+        :param file_name: The name of the file.
+        :type file_name: str
+        :param file_size: The size of the file.
+        :type file_size: int
+        :param file_hash: The hash of the file.
+        :type file_hash: str
+        :return: None
+        """
         is_current_user = sender == User.this_user
         file_desc = FileDescription(self, chat_id, sender, file_name, file_size, file_hash, align_right=False)
 
@@ -921,11 +1208,25 @@ class MessagesPanel(ScrolledPanel):
 
 
     def reset_messages(self):
+        """
+        Clears all messages from the MessagesPanel.
+        :return: None
+        """
         count = self.sizer.Clear(True)
 
 
 class ChatTools(wx.Panel):
+    """
+    A panel containing the tools for sending messages and files.
+    """
     def __init__(self, parent, chat_id):
+        """
+        Initializes the ChatTools panel.
+        :param parent: The parent of the ChatTools panel.
+        :type parent: wx.Window
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        """
         super(ChatTools, self).__init__(parent)
         self.parent = parent
         self.MAX_MESSAGE_LENGTH = 150
@@ -940,7 +1241,7 @@ class ChatTools(wx.Panel):
         # Set the font on the text control
         self.message_input.SetFont(font)
         self.message_input.SetMaxLength(self.MAX_MESSAGE_LENGTH)
-
+        
         self.send_file_button = wx.Button(self, label='')
         file_image = wx.Image("assets/file.png", wx.BITMAP_TYPE_ANY)
         file_image = resize_image(file_image, self.send_file_button.GetSize()[0]*2, self.send_file_button.GetSize()[1]*2)
@@ -960,6 +1261,12 @@ class ChatTools(wx.Panel):
         self.SetSizer(self.sizer)
 
     def on_file_choose(self, event):
+        """
+        Opens a file dialog and sends the selected file to the server.
+        :param event: The event that triggered the function.
+        :type event: wx.Event
+        :return: None
+        """
         wildcard = 'All files (*.*)|*.*'  # Filter file types to show
         dialog = wx.FileDialog(None, message='Choose a file', wildcard=wildcard, style=wx.FD_OPEN)
         if dialog.ShowModal() == wx.ID_OK:
@@ -967,8 +1274,10 @@ class ChatTools(wx.Panel):
             file_path = dialog.GetPath()
             # Load the contents of the file
             file_contents = FileHandler.load_file(file_path)
+            # Encrypt the file contents with the chat key
+            enc_contents = AESCipher.encrypt_bytes(KeysManager.get_chat_key(self.chat_id), file_contents)
             # Encode the file contents in base64 format
-            b64_contents = base64.b64encode(file_contents).decode()
+            b64_contents = base64.b64encode(enc_contents).decode()
             # Construct a message to send the file to the server
             msg = Protocol.send_file(self.chat_id, os.path.basename(file_path), b64_contents)
             # Get the file hash
@@ -983,6 +1292,12 @@ class ChatTools(wx.Panel):
         dialog.Destroy()
 
     def onMessageSend(self, event):
+        """
+        Sends a message to the server.
+        :param event: The event that triggered the function.
+        :type event: wx.Event
+        :return: None
+        """
         raw_message = str(self.message_input.GetValue())
         if raw_message != '':
             try:
@@ -1001,6 +1316,17 @@ class ChatMessage(wx.Panel):
     A panel for displaying a chat message- The user box alongside the text message split into lines
     """
     def __init__(self, parent, user: User, message: str, align_right=False):
+        """
+        Initializes the ChatMessage panel.
+        :param parent: The parent of the ChatMessage panel.
+        :type parent: wx.Window
+        :param user: The user who sent the message.
+        :type user: User
+        :param message: The message to display.
+        :type message: str
+        :param align_right: Whether to align the message to the right of the panel.
+        :type align_right: bool
+        """
         super(ChatMessage, self).__init__(parent)
 
         self.GAP = 20
@@ -1034,7 +1360,27 @@ class ChatMessage(wx.Panel):
 
 
 class FileDescription(wx.Panel):
+        """
+        A panel for displaying a file description- The user box alongside the file name and size
+        """
         def __init__(self, parent, user: User, chat_id: int, file_name: str, file_size: int, file_hash: str, align_right=False):
+            """
+            Initializes the FileDescription panel.
+            :param parent: The parent of the FileDescription panel.
+            :type parent: wx.Window
+            :param user: The user who sent the file.
+            :type user: User
+            :param chat_id: The ID of the chat the file was sent in.
+            :type chat_id: int
+            :param file_name: The name of the file.
+            :type file_name: str
+            :param file_size: The size of the file in bytes.
+            :type file_size: int
+            :param file_hash: The hash of the file.
+            :type file_hash: str
+            :param align_right: Whether to align the file description to the right of the panel.
+            :type align_right: bool
+            """
             super(FileDescription, self).__init__(parent)
             self.file_name = file_name
             self.file_size = file_size
@@ -1073,7 +1419,11 @@ class FileDescription(wx.Panel):
             self.SetSizer(self.sizer)
 
         def onDownload(self, event):
-            print('requesting file')
+            """
+            Called when the user clicks the download button.
+            :param event: The event that triggered the function call.
+            :type event: wx.Event
+            """
             # Construct a message to request the file from the server
             msg = Protocol.request_file(self.file_hash)
             # Send the message to the server
@@ -1081,11 +1431,14 @@ class FileDescription(wx.Panel):
 
 
 class GroupsSwitcher(wx.BoxSizer):
+    """
+    A box sizer for switching between groups
+    """
     def __init__(self, parent):
         """
-
-        :param parent:
-        :type parent:
+        Initializes the GroupsSwitcher sizer.
+        :param parent: The parent of the GroupsSwitcher sizer.
+        :type parent: wx.Window
         """
         # Initialize the base class
         wx.BoxSizer.__init__(self)
@@ -1105,8 +1458,12 @@ class GroupsSwitcher(wx.BoxSizer):
         pub.subscribe(self.onGroupMembers, 'group_members')
         pub.subscribe(self.onChatHistory, 'chat_history')
 
-
     def onChatHistory(self, messages):
+        """
+        Called when the client receives a chat history from the server.
+        :param messages: The messages in the chat history.
+        :type messages: list
+        """
         chat_id = messages[0]['chat_id']
         self.groups[chat_id][0].reset_messages()
 
@@ -1122,7 +1479,6 @@ class GroupsSwitcher(wx.BoxSizer):
                 if msg['opname'] == 'text_message':
                     raw_msg = msg['message']
                     decrypted_message = AESCipher.decrypt(chat_key, raw_msg)
-                    print('adding on top!', decrypted_message)
                     self.groups[chat_id][0].add_text_message_top(sender_user, decrypted_message)
                 else:
                     # File description
@@ -1133,15 +1489,13 @@ class GroupsSwitcher(wx.BoxSizer):
 
     def onTextMessage(self, sender, chat_id, raw_message):
         """
-
-        :param sender:
-        :type sender:
-        :param chat_id:
-        :type chat_id:
-        :param raw_message:
-        :type raw_message:
-        :return:
-        :rtype:
+        Called when the client receives a text message from the server.
+        :param sender: The sender of the message.
+        :type sender: str
+        :param chat_id: The id of the chat the message was sent to.
+        :type chat_id: int
+        :param raw_message: The raw message.
+        :type raw_message: bytes
         """
         try:
             chat_key = KeysManager.get_chat_key(chat_id)
@@ -1153,11 +1507,30 @@ class GroupsSwitcher(wx.BoxSizer):
             self.groups[chat_id][0].add_text_message(sender_user, decrypted_message)
 
     def onFileDescription(self, chat_id, file_name, file_size, sender, file_hash):
+        """
+        Called when the client receives a file description from the server.
+        :param chat_id: The id of the chat the file was sent to.
+        :type chat_id: int
+        :param file_name: The name of the file.
+        :type file_name: str
+        :param file_size: The size of the file.
+        :type file_size: int
+        :param sender: The sender of the file.
+        :type sender: str
+        :param file_hash: The hash of the file.
+        :type file_hash: str
+        """
         sender_user = main_gui.MainPanel.get_user_by_name(sender)
         self.groups[chat_id][0].add_file_description(sender_user, chat_id, file_name, file_size, file_hash)
 
-
     def onGroupMembers(self, chat_id, usernames):
+        """
+        Called when the client receives a list of group members from the server.
+        :param chat_id: The id of the chat the group members belong to.
+        :type chat_id: int
+        :param usernames: The usernames of the group members.
+        :type usernames: list
+        """
         self.groups[chat_id][1].reset_friends()
         for username in usernames:
             user = main_gui.MainPanel.get_user_by_name(username)
@@ -1165,13 +1538,13 @@ class GroupsSwitcher(wx.BoxSizer):
 
     def add_group(self, group_id, users: List[User]):
         """
-
-        :param group_id:
-        :type group_id:
-        :param users:
-        :type users:
-        :return:
-        :rtype:
+        Adds a group to the switcher.
+        :param group_id: The id of the group.
+        :type group_id: int
+        :param users: The users in the group.
+        :type users: list
+        :return: The group panel.
+        :rtype: wx.Panel
         """
         group_panel = wx.Panel(self.parent)
 
@@ -1206,11 +1579,10 @@ class GroupsSwitcher(wx.BoxSizer):
 
     def onGroupMemberAdd(self, event):
         """
-
-        :param event:
-        :type event:
-        :return:
-        :rtype:
+        Called when the user clicks on the add group member button.
+        :param event: The event.
+        :type event: wx.Event
+        :return: None
         """
         group_id = event.GetId()
         friends_usernames = [friend.username for friend in main_gui.MainPanel.my_friends]
@@ -1232,17 +1604,20 @@ class GroupsSwitcher(wx.BoxSizer):
 
     def add_group_member(self, group_id, new_member: User):
         """
-
-        :param group_id:
-        :type group_id:
-        :param new_member:
-        :type new_member:
-        :return:
-        :rtype:
+        Adds a group member to the group.
+        :param group_id: The id of the group.
+        :type group_id: int
+        :param new_member: The new member.
+        :type new_member: User
+        :return: None
         """
         self.groups[group_id][1].add_user(new_member)
 
     def reset_groups(self):
+        """
+        Resets the groups.
+        :return: None
+        """
         for i in range(len(self.groups_panels.keys())):
             self.Remove(0)
         self.groups_panels = {}
@@ -1250,11 +1625,10 @@ class GroupsSwitcher(wx.BoxSizer):
 
     def Show(self, chat_id):
         """
-
-        :param chat_id:
-        :type chat_id:
-        :return:
-        :rtype:
+        Shows the given panel and hides the rest.
+        :param chat_id: The id of the panel to show.
+        :type chat_id: int
+        :return: None
         """
         # For each panel in the list of panels
         for id_, group_panel in self.groups_panels.items():
@@ -1279,7 +1653,15 @@ class GroupsPanel(wx.Panel):
 
 
 class FriendRequestsPanel(ScrolledPanel):
+    """
+    The panel that contains the friend requests.
+    """
     def __init__(self, parent):
+        """
+        The constructor.
+        :param parent: The parent window.
+        :type parent: wx.Window
+        """
         super(FriendRequestsPanel, self).__init__(parent, style=wx.SIMPLE_BORDER)
         self.parent = parent
         self.SetupScrolling()
@@ -1288,6 +1670,13 @@ class FriendRequestsPanel(ScrolledPanel):
         self.friend_requests = []
 
     def add_friend_request(self, adder: User):
+        """
+        Adds a friend request to the panel.
+        :param adder: The user that sent the request.
+        :type adder: User
+        :return: None
+        """
+
         adder_box = UserBox(self, user=adder, pic_size=5)
         add_button = wx.Button(self, label='approve', name=adder.username)
         add_button.Bind(wx.EVT_BUTTON, self.onRequestClick)
@@ -1308,6 +1697,12 @@ class FriendRequestsPanel(ScrolledPanel):
         self.Layout()
 
     def onRequestClick(self, event):
+        """
+        Called when the user clicks on a friend request button.
+        :param event: The event.
+        :type event: wx.Event
+        """
+
         username = event.GetEventObject().GetName()
         label = event.GetEventObject().GetLabel()
         approved = label == 'approve'
@@ -1331,6 +1726,11 @@ class FriendRequestsPanel(ScrolledPanel):
 
 class CreateGroupDialog(wx.Dialog):
     def __init__(self, parent):
+        """
+        The constructor.
+        :param parent: The parent window.
+        :type parent: wx.Window
+        """
         wx.Dialog.__init__(self, parent, title="Create New Group")
 
         self.parent = parent
@@ -1364,17 +1764,35 @@ class CreateGroupDialog(wx.Dialog):
         sizer.Fit(self)
 
     def on_create(self, event):
+        """
+        Called when the user clicks the "Create" button.
+        :param event: The event.
+        :type event: wx.Event
+        """
         # Handle the "Create" button click
         self.group_name = self.name_textctrl.GetValue()
         self.EndModal(wx.ID_OK)
 
     def on_cancel(self, event):
+        """
+        Called when the user clicks the "Cancel" button.
+        :param event: The event.
+        :type event: wx.Event
+        """
         # Handle the "Cancel" button click
         self.EndModal(wx.ID_CANCEL)
 
 
 class AddFriendDialog(wx.Dialog):
+    """
+    A dialog for adding a new friend.
+    """
     def __init__(self, parent):
+        """
+        The constructor.
+        :param parent: The parent window.
+        :type parent: wx.Window
+        """
         super().__init__(parent, title='Add a new friend')
 
         panel = wx.Panel(self)
@@ -1409,6 +1827,11 @@ class AddFriendDialog(wx.Dialog):
         self.Centre()
 
     def OnAdd(self, event):
+        """
+        Called when the user clicks the "Add" button.
+        :param event: The event.
+        :type event: wx.Event
+        """
         friend_username = self.friend_username.GetValue()
         if friend_username:
             self.friend_username = friend_username
@@ -1417,10 +1840,93 @@ class AddFriendDialog(wx.Dialog):
             wx.MessageBox('Please enter a username.', 'Error', wx.OK | wx.ICON_ERROR)
 
     def OnCancel(self, event):
+        """
+        Called when the user clicks the "Cancel" button.
+        :param event: The event.
+        """
         self.EndModal(wx.ID_CANCEL)
 
 
+class CallDialog(wx.PopupTransientWindow):
+    """
+    A dialog for accepting or declining a call.
+    """
+    def __init__(self, parent, message, chat_id, call_type):
+        """
+        The constructor.
+        :param parent: The parent window.
+        :type parent: wx.Window
+        :param message: The message to display.
+        :type message: str
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
+        :param call_type: The type of call.
+        :type call_type: str
+        """
+        wx.PopupTransientWindow.__init__(self, parent, style=wx.BORDER_SIMPLE|wx.STAY_ON_TOP)
+
+        self.chat_id = chat_id
+        self.call_type = call_type
+        self.parent = parent
+
+        # Create the message label
+        message_label = wx.StaticText(self, label=message)
+
+        # Create the join and decline buttons
+        join_button = wx.Button(self, label='Join')
+        decline_button = wx.Button(self, label='Decline')
+
+        # Bind the button events
+        join_button.Bind(wx.EVT_BUTTON, self.on_join)
+        decline_button.Bind(wx.EVT_BUTTON, self.on_decline)
+
+        # Create the button sizer
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(join_button, 0, wx.ALL, 5)
+        button_sizer.Add(decline_button, 0, wx.ALL, 5)
+
+        # Create the main sizer
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(message_label, 0, wx.ALL, 10)
+        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER|wx.ALL, 10)
+
+        # Set the sizer and size the dialog
+        self.SetSizer(sizer)
+        self.Fit()
+
+        # Center the dialog on the parent window
+        self.Position(wx.Point(parent.GetPosition().x + parent.GetSize().x/2 - self.GetSize().x/2,
+                                parent.GetPosition().y + parent.GetSize().y/2 - self.GetSize().y/2))
+
+
+    def on_join(self, event):
+        """
+        Called when the user clicks the "Join" button.
+        :param event: The event.
+        :type event: wx.Event
+        """
+        self.parent.on_join(self.chat_id, self.call_type)
+
+    def on_decline(self, event):
+        """
+        Called when the user clicks the "Decline" button.
+        :param event: The event.
+        :type event: wx.Event
+        """
+        self.parent.on_decline(self.chat_id)
+
+
 def resize_image(image, target_width, target_height):
+    """
+    Resizes an image to fit within the given dimensions.
+    :param image: The image to resize.
+    :type image: wx.Image
+    :param target_width: The target width.
+    :type target_width: int
+    :param target_height: The target height.
+    :type target_height: int
+    :return: The resized image.
+    """
     width, height = image.GetSize()
     aspect_ratio = width / float(height)
 
