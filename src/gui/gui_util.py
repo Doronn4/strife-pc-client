@@ -1863,7 +1863,7 @@ class CallDialog(wx.PopupTransientWindow):
         :param call_type: The type of call.
         :type call_type: str
         """
-        wx.PopupTransientWindow.__init__(self, parent, style=wx.BORDER_SIMPLE|wx.STAY_ON_TOP)
+        super().__init__(parent, wx.SIMPLE_BORDER | wx.STAY_ON_TOP)
 
         self.chat_id = chat_id
         self.call_type = call_type
