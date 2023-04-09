@@ -422,8 +422,11 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return -
         """
-        active_call = self.voice_call_window is not None and self.voice_call_window.IsShown() or \
-                      self.video_call_window is not None and self.video_call_window.IsShown()
+        active_call = False
+        if self.voice_call_window:
+            active_call = self.voice_call_window.IsShown()
+        if self.video_call_window:
+            active_call = self.video_call_window.IsShown()
 
         if not active_call:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
