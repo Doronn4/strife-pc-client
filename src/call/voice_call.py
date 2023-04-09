@@ -92,6 +92,7 @@ class VoiceCall:
             ip = addr[0]
             
             if ip not in self.call_members.keys():
+                print(ip, self.parent.call_members.keys(), 'here')
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
                 else:
