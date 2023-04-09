@@ -56,7 +56,7 @@ class VideoCall:
             if self.transmit_video:
                 frame = self.camera.read()
 
-                # Update the current user's video
+                # Update the current user's video frame
                 gui_util.User.this_user.update_video(frame)
 
                 # Compress the frame to jpg format
@@ -89,8 +89,6 @@ class VideoCall:
             # Convert the buffer received to an image
             buffer = numpy.frombuffer(data, numpy.uint8)
             frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
-            # Convert to RGB format
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Get the ip of the sender
             ip = addr[0]

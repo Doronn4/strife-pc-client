@@ -42,6 +42,8 @@ class CameraHandler:
         if self.active:
             # Read a frame from the camera
             ret, image = self.cam.read()
+            # Convert the frame to RGB
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             # If there is a problem with the camera
             if not ret:
                 # Set the camera object to not active
