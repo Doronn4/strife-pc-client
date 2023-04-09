@@ -1319,7 +1319,7 @@ class ChatTools(wx.Panel):
 
 class ChatMessage(wx.Panel):
     """
-    A panel for displaying a chat message- The user box alongside the text message split into lines
+    A panel for displaying a chat message-The user box alongside the text message split into lines
     """
 
     def __init__(self, parent, user: User, message: str, align_right=False):
@@ -1919,7 +1919,7 @@ class CallDialog(wx.PopupTransientWindow):
         :param event: The event.
         :type event: wx.Event
         """
-        self.parent.on_join(self.chat_id, self.call_type)
+        self.parent.on_join(self.chat_id)
 
     def on_decline(self, event):
         """

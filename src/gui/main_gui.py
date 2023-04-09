@@ -395,8 +395,10 @@ class MainPanel(wx.Panel):
         dialog = self.incoming_calls[chat_id]
         if dialog.call_type == 'video':
             msg = Protocol.join_video(chat_id)
+            self.onVideo(None)
         else:
             msg = Protocol.join_voice(chat_id)
+            self.onVoice(None)
         
         dialog.Dismiss()
         del self.incoming_calls[chat_id]
@@ -415,9 +417,9 @@ class MainPanel(wx.Panel):
 
     def onVoice(self, event):
         """
-        Called when the user presses the voice call button
-        :param event: The wx event
-        :type event: wx.Event
+        Called when the user presses the voice call button or when the user receives a voice call
+        :param event: The wx event or None if the call was received
+        :return -
         """
         if not self.video_call_window and not self.voice_call_window:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
@@ -430,6 +432,11 @@ class MainPanel(wx.Panel):
             self.parent.general_com.send_data(msg)
 
     def onVideo(self, event):
+        """
+        Called when the user presses the video call button or when the user receives a video call
+        :param event: The wx event or None if the call was received
+        :return: -
+        """
         if not self.video_call_window and not self.voice_call_window:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
             key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
