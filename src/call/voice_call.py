@@ -66,6 +66,7 @@ class VoiceCall:
         """
         while self.active:
             if not self.muted:
+                print(self.call_members)
                 data = self.audio_input.read(self.CHUNK)
                 # Encrypt the data using the call's symmetrical key
                 data = self.aes.encrypt_bytes(self.key, data)
