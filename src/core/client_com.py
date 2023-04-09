@@ -2,8 +2,6 @@ import base64
 import socket
 import threading
 import queue
-import time
-
 from src.core.cryptions import RSACipher, AESCipher
 
 
@@ -42,7 +40,9 @@ class ClientCom:
 
         self.running = False
 
-        threading.Thread(target=self.connect_until_success).start()
+        # Start the main thread
+        self.main_thread = threading.Thread(target=self._main_loop)
+        self.main_thread.start()
 
     def send_data(self, data):
         """
@@ -79,12 +79,12 @@ class ClientCom:
         except Exception:
             raise self.CONNECTION_EXCEPTION
 
-    def connect_to_server(self):
+    def _main_loop(self):
         """
-        Connects to the server.
+        The main loop which receives data from the server and puts it in a queue
         :return: -
-        :rtype: -
         """
+
         # Try to connect to the server
         try:
             self.socket.connect((self.server_ip, self.server_port))
@@ -99,11 +99,6 @@ class ClientCom:
 
         self.running = True
 
-    def _main_loop(self):
-        """
-        The main loop which receives data from the server and puts it in a queue
-        :return: -
-        """
         # Run while the client_com object is running
         while self.running:
             try:
@@ -123,16 +118,14 @@ class ClientCom:
             # Invalid size exception
             except ValueError:
                 self.running = False
-                self.reconnect()
             # Socket exception
             except socket.error:
                 self.running = False
-                self.reconnect()
             else:
                 try:
                     dec_data = AESCipher.decrypt(self.aes_key, data.decode())
                 except Exception:
-                    self.reconnect()
+                    pass
                 else:
                     # Put the received data inside the message queue
                     self.message_queue.put(dec_data)
@@ -194,19 +187,6 @@ class ClientCom:
         self.aes_key = None
         self.socket = socket.socket()
 
-        threading.Thread(target=self.connect_until_success).start()
-
-    def connect_until_success(self):
-        """
-        Connects to the server until it succeeds
-        :return: -
-        :rtype: -
-        """
-        while True:
-            try:
-                self.connect_to_server()
-            except Exception:
-                time.sleep(2)
-            else:
-                threading.Thread(target=self._main_loop).start()
-                break
+        # Start the main thread
+        self.main_thread = threading.Thread(target=self._main_loop)
+        self.main_thread.start()
