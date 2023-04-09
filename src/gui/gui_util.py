@@ -1075,6 +1075,13 @@ class CallWindow(wx.Frame):
         self.voice_call.terminate()
         if self.is_video:
             self.video_call.terminate()
+
+        # Unsubscribe from the events
+        pub.unsubscribe(self.onVoiceInfo, 'voice_info')
+        pub.unsubscribe(self.onVideoInfo, 'video_info')
+        pub.unsubscribe(self.onVoiceJoined, 'voice_joined')
+        pub.unsubscribe(self.onVideoJoined, 'video_joined')
+
         self.Close()
 
     def onCameraToggle(self, event):

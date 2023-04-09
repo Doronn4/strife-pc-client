@@ -133,7 +133,7 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onVoiceStart, 'voice_started')
         pub.subscribe(self.onVideoStart, 'video_started')
         self.load_friends()
-    
+
     def onUserPic(self, contents, username):
         """
         Update the user's picture
@@ -280,7 +280,8 @@ class MainPanel(wx.Panel):
         """
         self.friend_requests_panel.add_friend_request(MainPanel.get_user_by_name(adder_username))
         if not is_silent:
-            notification = wx.adv.NotificationMessage('New friend request', f'you have a new friend request from {adder_username}',
+            notification = wx.adv.NotificationMessage('New friend request',
+                                                      f'you have a new friend request from {adder_username}',
                                                       self, wx.ICON_INFORMATION)
             notification.Show()
 
@@ -399,7 +400,7 @@ class MainPanel(wx.Panel):
         else:
             msg = Protocol.join_voice(chat_id)
             self.onVoice(None)
-        
+
         dialog.Dismiss()
         del self.incoming_calls[chat_id]
         self.parent.general_com.send_data(msg)
@@ -421,12 +422,16 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return -
         """
-        if not self.video_call_window and not self.voice_call_window:
+        active_call = self.voice_call_window is not None and self.voice_call_window.IsShown() or \
+                      self.video_call_window is not None and self.video_call_window.IsShown()
+
+        if not active_call:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
             key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
             self.voice_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key)
             self.voice_call_window.Show()
-        
+
+        # If the call was started by the current user, send a start voice message to the server
         if event:
             msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
             self.parent.general_com.send_data(msg)
@@ -437,12 +442,17 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return: -
         """
-        if not self.video_call_window and not self.voice_call_window:
+        active_call = self.voice_call_window is not None and self.voice_call_window.IsShown() or \
+                      self.video_call_window is not None and self.video_call_window.IsShown()
+
+        if not active_call:
             title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
             key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
-            self.video_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key, video=True)
+            self.video_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key,
+                                                         video=True)
             self.video_call_window.Show()
-        
+
+        # If the call was started by the current user, send a start video message to the server
         if event:
             msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
             self.parent.general_com.send_data(msg)
@@ -504,7 +514,7 @@ class MainPanel(wx.Panel):
             MainPanel.known_users.append(user_found)
 
         return user_found
-    
+
     @staticmethod
     def get_name_by_id(id):
         """
@@ -527,6 +537,7 @@ class MainFrame(wx.Frame):
     """
     The main frame of the application
     """
+
     def __init__(self, parent, title, general_com, chats_com, files_com):
         """
         The constructor
@@ -583,4 +594,3 @@ class MainFrame(wx.Frame):
         self.files_com.close()
         wx.GetApp().ExitMainLoop()
         event.Skip()
-
