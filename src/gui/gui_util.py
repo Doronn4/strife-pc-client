@@ -938,7 +938,7 @@ class CallWindow(wx.Frame):
         # Initialize the voice and video call objects
         self.voice_call = None
         self.video_call = None
-        threading.Thread(target=self.init_calls, name='initcalls').start()
+        self.init_calls()
 
         # Initialize the sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1006,6 +1006,8 @@ class CallWindow(wx.Frame):
         :param usernames: The usernames of the users in the call.
         :type usernames: list
         """
+        print("Voice info: " + str(chat_id) + " " + str(ips) + " " + str(usernames))
+        print(self.voice_call.chat_id)
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
