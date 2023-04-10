@@ -70,7 +70,8 @@ class VoiceCall:
         """
         while self.active:
             time.sleep(1)
-            for ip, user in self.call_members.items():
+            call_members_copy = self.call_members.copy()
+            for ip, user in call_members_copy.items():
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
                     self.remove_user(ip)
                     self.parent.call_grid.remove_user(user.username)
