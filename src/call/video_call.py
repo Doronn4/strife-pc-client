@@ -120,14 +120,12 @@ class VideoCall:
         """
         if ip not in self.ips_users.keys():
             self.ips_users[ip] = user
-            wx.CallAfter(self.parent.call_grid.add_user, user)
 
     def remove_user(self, ip):
         """
         Removes a user from the call
         """
         if ip in self.ips_users.keys():
-            self.parent.call_grid.remove_user(self.ips_users[ip])
             del self.ips_users[ip]
 
     def toggle_video(self):
