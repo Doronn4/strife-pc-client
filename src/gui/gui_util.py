@@ -16,6 +16,7 @@ import base64
 from src.call.video_call import VideoCall
 from src.call.voice_call import VoiceCall
 import wx.lib.agw.toasterbox as toaster
+import wx.adv
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
 MAX_PARTICIPANTS = 6
@@ -479,7 +480,6 @@ class UsersScrollPanel(ScrolledPanel):
         :param chat_id: The chat id of the User object associated with the clicked UserBox object.
         :type chat_id: int
         :return: None
-        :rtype: None
         """
         for userbox in self.users:
             if userbox.user.chat_id == chat_id:
@@ -874,9 +874,10 @@ class CallGrid(wx.GridSizer):
             if panel.user.username == username:
                 # Remove the panel from the grid sizer
                 index = self.users_panels.index(panel)
-                self.Remove(index)
+                print(self.Remove(index), 'removed', username)
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
+                panel.DestroyLater()
                 break
 
         self.Layout()
@@ -1919,6 +1920,11 @@ class CallDialog(wx.PopupTransientWindow):
         self.Position(wx.Point(parent.GetPosition().x + parent.GetSize().x / 2 - self.GetSize().x / 2,
                                parent.GetPosition().y + parent.GetSize().y / 2 - self.GetSize().y / 2), size_to_set)
 
+        # Create a sound object
+        self.call_sound = wx.adv.Sound("sounds/call.wav")
+        # Play the sound
+        self.call_sound.Play(wx.adv.SOUND_ASYNC)
+
     def on_join(self, event):
         """
         Called when the user clicks the "Join" button.
@@ -1926,6 +1932,7 @@ class CallDialog(wx.PopupTransientWindow):
         :type event: wx.Event
         """
         self.parent.on_join(self.chat_id)
+        self.call_sound.Stop()
 
     def on_decline(self, event):
         """
@@ -1934,6 +1941,7 @@ class CallDialog(wx.PopupTransientWindow):
         :type event: wx.Event
         """
         self.parent.on_decline(self.chat_id)
+        self.call_sound.Stop()
 
 
 def resize_image(image, target_width, target_height):

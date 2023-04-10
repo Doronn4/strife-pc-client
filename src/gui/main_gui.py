@@ -369,7 +369,7 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
-        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+        title = self.get_name_by_id(chat_id)
         self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming voice call from {title}", chat_id, 'voice')
         # Show the dialog
         self.incoming_calls[chat_id].Popup()
@@ -381,7 +381,7 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
-        title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
+        title = self.get_name_by_id(chat_id)
         self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id, 'video')
         # Show the dialog
         self.incoming_calls[chat_id].Popup()
@@ -396,10 +396,10 @@ class MainPanel(wx.Panel):
         dialog = self.incoming_calls[chat_id]
         if dialog.call_type == 'video':
             msg = Protocol.join_video(chat_id)
-            self.onVideo(None)
+            self.onVideo(chat_id)
         else:
             msg = Protocol.join_voice(chat_id)
-            self.onVoice(None)
+            self.onVoice(chat_id)
 
         dialog.Dismiss()
         del self.incoming_calls[chat_id]
@@ -423,21 +423,32 @@ class MainPanel(wx.Panel):
         :return -
         """
         active_call = False
+
+        if type(event) == wx.Event:
+            chat_id = self.groups_panel.sizer.current_group_id
+        else:
+            chat_id = event
+
         if self.voice_call_window:
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
 
         if not active_call:
-            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-            key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
-            self.voice_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key)
+            title = self.get_name_by_id(chat_id)
+            key = KeysManager.get_chat_key(chat_id)
+            self.voice_call_window = gui_util.CallWindow(self, title, chat_id, key)
             self.voice_call_window.Show()
 
         # If the call was started by the current user, send a start voice message to the server
-        if event:
-            msg = Protocol.start_voice(self.groups_panel.sizer.current_group_id)
+        if type(event) == wx.Event:
+            msg = Protocol.start_voice(chat_id)
             self.parent.general_com.send_data(msg)
+
+        # Create a sound object
+        join_sound = wx.adv.Sound("sounds/call_join.wav")
+        # Play the sound
+        join_sound.Play(wx.adv.SOUND_ASYNC)
 
     def onVideo(self, event):
         """
@@ -462,6 +473,11 @@ class MainPanel(wx.Panel):
         if event:
             msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
             self.parent.general_com.send_data(msg)
+
+        # Create a sound object
+        join_sound = wx.adv.Sound("sounds/call_join.wav")
+        # Play the sound
+        join_sound.Play(wx.adv.SOUND_ASYNC)
 
     def onLogout(self, event):
         """

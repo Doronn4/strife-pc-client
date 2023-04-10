@@ -8,7 +8,7 @@ from pubsub import pub
 import wx.lib.inspection
 import base64
 import sys
-import wx.lib.agw.toasterbox as toaster
+import wx.lib.inspection
 
 
 # Add the project folder to PYTHONPATH
@@ -415,6 +415,7 @@ def main():
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,
                            chats_com=chats_com, files_com=files_com)
     main_frame.Show()
+    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
     # When the GUI is closed, close the threads

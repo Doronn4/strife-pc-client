@@ -4,6 +4,7 @@ import threading
 import time
 
 import wx
+import wx.adv
 import pyaudio
 from src.core.cryptions import AESCipher
 
@@ -74,9 +75,7 @@ class VoiceCall:
             for ip, user in call_members_copy.items():
                 print(user.last_audio_update, time.time(), user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time())
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
-                    print('removing user', user.username)
                     self.remove_user(ip)
-                    self.parent.call_grid.remove_user(user.username)
 
     def send_audio(self):
         """
@@ -133,8 +132,12 @@ class VoiceCall:
         Removes a user from the call
         """
         if ip in self.call_members.keys():
-            self.parent.call_grid.remove_user(self.call_members[ip])
+            self.parent.call_grid.remove_user(self.call_members[ip].username)
             del self.call_members[ip]
+            # Create a sound object
+            join_sound = wx.adv.Sound("sounds/call_leave.wav")
+            # Play the sound
+            join_sound.Play(wx.adv.SOUND_ASYNC)
 
     def toggle_mute(self):
         """
