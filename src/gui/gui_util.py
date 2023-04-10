@@ -749,6 +749,7 @@ class CallUserPanel(wx.Panel):
         label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
 
+        # Set up the timer for getting new frames and refreshing the display
         self.timer = None
         wx.CallAfter(self.init_timer)
 
@@ -1029,8 +1030,11 @@ class CallWindow(wx.Frame):
         :param username: The username of the user who joined.
         :type username: str
         """
+        # If the voice call exists and the chat ID matches
         if self.voice_call and self.voice_call.chat_id == chat_id:
+            # Add the user to the voice call
             self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            #  Add the user to the call members
             self.call_members[ip] = username
 
     def onVideoJoined(self, chat_id, ip, username):
@@ -1043,9 +1047,13 @@ class CallWindow(wx.Frame):
         :param username: The username of the user who joined.
         :type username: str
         """
+        # If the video call exists and the chat ID matches
         if self.video_call and self.video_call.chat_id == chat_id:
+            # Add the user to the video call
             self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            # Add the user to the voice call
             self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            # Add the user to the call members
             self.call_members[ip] = username
 
     def get_user_by_ip(self, ip):

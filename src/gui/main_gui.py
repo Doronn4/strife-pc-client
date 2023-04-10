@@ -599,6 +599,16 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.onClose)
 
+        pub.subscribe(self.onConnectionLost, 'server_connection_lost')
+
+    def onConnectionLost(self):
+        """
+        Called when the connection to the server is lost
+        :return: None
+        """
+        wx.MessageBox('Connection to the server was lost', 'Connection lost', wx.OK | wx.ICON_ERROR)
+        self.Close()
+
     def move_to_main(self):
         """
         Moves to the main panel
@@ -619,5 +629,7 @@ class MainFrame(wx.Frame):
         self.general_com.close()
         self.chats_com.close()
         self.files_com.close()
+        KeysManager.last_password = None
+        KeysManager.chats_keys = {}
         wx.GetApp().ExitMainLoop()
         event.Skip()

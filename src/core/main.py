@@ -141,7 +141,8 @@ def handle_file_description(message):
     file_size = message['file_size']
     sender = message['sender']
     file_hash = message['file_hash']
-    wx.CallAfter(pub.sendMessage, 'file_description', chat_id=chat_id, file_name=file_name, file_size=file_size, sender=sender, file_hash=file_hash)
+    wx.CallAfter(pub.sendMessage, 'file_description', chat_id=chat_id, file_name=file_name,
+                 file_size=file_size, sender=sender, file_hash=file_hash)
 
 
 def handle_file_in_chat(message):
@@ -149,7 +150,8 @@ def handle_file_in_chat(message):
     :param message: The message received from the server.
     """
     # Show a dialog to select the location to save the file
-    dialog = wx.FileDialog(None, message="Save file", defaultDir="", defaultFile=message['file_name'], wildcard="All files (*.*)|*.*", style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    dialog = wx.FileDialog(None, message="Save file", defaultDir="", defaultFile=message['file_name'],
+                           wildcard="All files (*.*)|*.*", style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
     if dialog.ShowModal() == wx.ID_OK:
         chat_id = message['chat_id']
         # Get the path of the selected file
@@ -401,10 +403,11 @@ def main():
     while not general_com.running:
         pass
 
-    # Initialize the keys manager and the file handler
+    # Change the working directory to the root of the project
     script_path = Path(os.path.abspath(__file__))
     wd = script_path.parent.parent.parent
     os.chdir(str(wd))
+    # Initialize the keys manager and the file handler
     KeysManager.initialize(str(wd) + '\\keys')
     FileHandler.initialize(str(wd) + '\\files')
 

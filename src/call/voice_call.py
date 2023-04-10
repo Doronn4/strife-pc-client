@@ -2,7 +2,6 @@ import queue
 import socket
 import threading
 import time
-
 import wx
 import wx.adv
 import pyaudio
@@ -18,7 +17,7 @@ class VoiceCall:
     CHANNELS = 1
     RATE = 44100
     CHUNK = 4096
-    CALL_TIMEOUT = 2  # The amount of seconds to wait for a response from a call member
+    CALL_TIMEOUT = 1  # The amount of seconds to wait for a response from a call member
 
     def __init__(self, parent, chat_id, key):
         """

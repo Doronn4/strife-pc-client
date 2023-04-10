@@ -50,6 +50,9 @@ class KeysManager:
         if not password:
             password = KeysManager.last_password
 
+        if not KeysManager.last_password:
+            return
+
         # Hashes the password and takes the first 32 characters.
         password_hash = hashlib.sha256(password.encode()).hexdigest()[:32]
 

@@ -2,7 +2,6 @@ import socket
 import threading
 import time
 import cv2
-import wx
 import numpy
 from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler

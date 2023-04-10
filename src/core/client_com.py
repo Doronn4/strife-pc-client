@@ -3,6 +3,8 @@ import socket
 import threading
 import queue
 from src.core.cryptions import RSACipher, AESCipher
+from pubsub import pub
+import wx
 
 
 class ClientCom:
@@ -34,8 +36,6 @@ class ClientCom:
         self.rsa = RSACipher()
         self.aes_key = None
 
-        self.CONNECTION_EXCEPTION = Exception('Connection to server failed')
-        self.NOT_RUNNING_EXCEPTION = Exception('Not running')
         self.INVALID_TYPE_EXCEPTION = Exception('Invalid data type')
 
         self.running = False
@@ -50,13 +50,12 @@ class ClientCom:
 
         :param data: The data to send.
         :type data: str or bytes
-        :raises: NOT_RUNNING_EXCEPTION if client com is not running
-        :raises: INVALID_TYPE_EXCEPTION if data is not a str or bytes object
-        :raises: CONNECTION_EXCEPTION if the socket connection fails
         """
         # Check if the client com is running
         if not self.running:
-            raise self.NOT_RUNNING_EXCEPTION
+            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+            self.close()
+            return
 
         # Encode the data if needed
         if type(data) == bytes:
@@ -77,7 +76,8 @@ class ClientCom:
             # Send the data
             self.socket.send(enc_data)
         except Exception:
-            raise self.CONNECTION_EXCEPTION
+            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+            self.close()
 
     def _main_loop(self):
         """
@@ -88,14 +88,22 @@ class ClientCom:
         # Try to connect to the server
         try:
             self.socket.connect((self.server_ip, self.server_port))
+
         except Exception:
-            raise self.CONNECTION_EXCEPTION
+            # If the server is not responding, send a message to the main frame
+            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+            self.close()
+            return
 
         # Change keys with server
         try:
             self.switch_keys()  # Switch encryption keys with server
+
         except Exception as e:
-            raise self.CONNECTION_EXCEPTION
+            # If the server is not responding, send a message to the main frame
+            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+            self.close()
+            return
 
         self.running = True
 
@@ -145,8 +153,10 @@ class ClientCom:
 
         while bytes_received < file_size:
             chunk = self.socket.recv(min(chunk_size, file_size - bytes_received))
+
             if not chunk:
-                raise ConnectionError("Connection closed prematurely.")
+                raise Exception('Socket connection broken')
+
             data += chunk
             bytes_received += len(chunk)
 
