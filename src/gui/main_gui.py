@@ -567,8 +567,7 @@ class MainPanel(wx.Panel):
 
         return user_found
 
-    @staticmethod
-    def get_name_by_id(id):
+    def get_name_by_id(self, id):
         """
         Gets a user's name by his id
         :param id: The user's id
@@ -577,7 +576,9 @@ class MainPanel(wx.Panel):
         :rtype: str
         """
         name = ''
-        for user in MainPanel.known_users:
+        # Get all the users in the friends panel (including groups)
+        all_users = [userbox.user for userbox in self.friends_panel.users]
+        for user in all_users:
             if user.chat_id == id:
                 name = user.username
                 break

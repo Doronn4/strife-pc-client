@@ -19,6 +19,7 @@ import wx.lib.agw.toasterbox as toaster
 import wx.adv
 
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
+TEXT_COLOR = wx.Colour(237, 99, 99)
 MAX_PARTICIPANTS = 6
 
 
@@ -447,7 +448,6 @@ class UsersScrollPanel(ScrolledPanel):
         :param username: The username of the UserBox object to be removed.
         :type username: str
         :return: None
-        :rtype: None
         """
         index = -1
         for i in range(len(self.users)):
@@ -942,10 +942,14 @@ class CallWindow(wx.Frame):
         # Initialize the sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
+        self.title_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.title_sizer.AddStretchSpacer(1)
         # Create the title of the window and it's font
         self.title = wx.StaticText(self, label=title)
-        font = wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        font = wx.Font(26, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.title.SetFont(font)
+        self.title.SetForegroundColour(TEXT_COLOR)
+        self.title_sizer.Add(self.title, 10, wx.ALIGN_CENTER_VERTICAL)
 
         # Initialize the call grid
         self.call_grid = CallGrid(self)
@@ -978,9 +982,9 @@ class CallWindow(wx.Frame):
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
         # Add the title, call grid and toolbar to the sizer
-        self.sizer.Add(self.title, 1, wx.ALIGN_LEFT)
-        self.sizer.Add(self.call_grid, 3, wx.EXPAND)
-        self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
+        self.sizer.Add(self.title_sizer, 1, wx.ALIGN_LEFT)
+        self.sizer.Add(self.call_grid, 8, wx.EXPAND)
+        self.sizer.Add(self.toolbar, 2, wx.ALIGN_CENTER)
 
         # Set the sizer
         self.SetSizer(self.sizer)
@@ -1495,6 +1499,7 @@ class GroupsSwitcher(wx.BoxSizer):
         self.parent = parent
         # A dict of all the groups panels where the key is the group id
         self.groups_panels = {}
+        # A dict of all the groups where the key is the group id
         self.groups = {}
         self.add_member_dialog = SelectFriendDialog(self.parent,
                                                     [friend.username for friend in main_gui.MainPanel.my_friends])
