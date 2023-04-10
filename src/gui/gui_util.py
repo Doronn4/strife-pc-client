@@ -874,7 +874,6 @@ class CallGrid(wx.GridSizer):
             if panel.user.username == username:
                 # Remove the panel from the grid sizer
                 index = self.users_panels.index(panel)
-                print(self.Remove(index), 'removed', username)
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
                 panel.DestroyLater()
@@ -1004,8 +1003,6 @@ class CallWindow(wx.Frame):
         :param usernames: The usernames of the users in the call.
         :type usernames: list
         """
-        print("Voice info: " + str(chat_id) + " " + str(ips) + " " + str(usernames))
-        print(self.voice_call.chat_id)
         if self.voice_call and self.voice_call.chat_id == chat_id:
             self.call_members = dict(zip(ips, usernames))
 
@@ -1083,6 +1080,11 @@ class CallWindow(wx.Frame):
         pub.unsubscribe(self.onVideoJoined, 'video_joined')
 
         self.Close()
+
+        # Create a sound object
+        join_sound = wx.adv.Sound("sounds/call_leave.wav")
+        # Play the sound
+        join_sound.Play(wx.adv.SOUND_ASYNC)
 
     def onCameraToggle(self, event):
         """

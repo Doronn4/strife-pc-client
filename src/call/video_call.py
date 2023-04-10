@@ -8,6 +8,7 @@ from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler
 import src.gui.gui_util as gui_util
 
+
 class VideoCall:
     """
     A class to handle the video call
@@ -28,7 +29,8 @@ class VideoCall:
         # The size of the video chunk
         self.BUFFER_SIZE = 1024 * 64
         # The camera handler object
-        self.camera = CameraHandler()
+        self.camera = None
+        threading.Thread(target=self._initiate_camera).start()
         # The call's chat id
         self.chat_id = chat_id
         # Is call active
@@ -46,6 +48,12 @@ class VideoCall:
         self.socket = None
 
         self._start()
+
+    def _initiate_camera(self):
+        """
+        Initiates the camera handler object
+        """
+        self.camera = CameraHandler()
 
     def send_video(self):
         """
@@ -79,8 +87,7 @@ class VideoCall:
             try:
                 # Receive the frame
                 data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
-            except Exception as e:
-                print(e)
+            except Exception:
                 continue
 
             # Decrypt the data using the call's symmetrical key

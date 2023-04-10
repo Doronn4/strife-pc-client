@@ -73,7 +73,6 @@ class VoiceCall:
             time.sleep(1)
             call_members_copy = self.call_members.copy()
             for ip, user in call_members_copy.items():
-                print(user.last_audio_update, time.time(), user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time())
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
                     self.remove_user(ip)
 
@@ -112,7 +111,6 @@ class VoiceCall:
             ip = addr[0]
             
             if ip not in self.call_members.keys():
-                print(ip, self.parent.call_members.keys(), 'here')
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
                 else:
@@ -126,6 +124,11 @@ class VoiceCall:
         """
         self.call_members[ip] = user
         wx.CallAfter(self.parent.call_grid.add_user, user)
+
+        # Create a sound object
+        join_sound = wx.adv.Sound("sounds/call_join.wav")
+        # Play the sound
+        join_sound.Play(wx.adv.SOUND_ASYNC)
 
     def remove_user(self, ip):
         """
