@@ -1045,6 +1045,7 @@ class CallWindow(wx.Frame):
         """
         if self.video_call and self.video_call.chat_id == chat_id:
             self.video_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
+            self.voice_call.add_user(ip, main_gui.MainPanel.get_user_by_name(username))
             self.call_members[ip] = username
 
     def get_user_by_ip(self, ip):
