@@ -1,6 +1,8 @@
 import queue
 import socket
 import threading
+import time
+
 import wx
 import pyaudio
 from src.core.cryptions import AESCipher
@@ -15,6 +17,7 @@ class VoiceCall:
     CHANNELS = 1
     RATE = 44100
     CHUNK = 4096
+    CALL_TIMEOUT = 2  # The amount of seconds to wait for a response from a call member
 
     def __init__(self, parent, chat_id, key):
         """
@@ -59,6 +62,18 @@ class VoiceCall:
 
         threading.Thread(target=self.receive_audio).start()
         threading.Thread(target=self.send_audio).start()
+        threading.Thread(target=self.check_users).start()
+
+    def check_users(self):
+        """
+        Checks if the users are still in the call
+        """
+        while self.active:
+            time.sleep(1)
+            for ip, user in self.call_members.items():
+                if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
+                    self.remove_user(ip)
+                    self.parent.call_grid.remove_user(user.username)
 
     def send_audio(self):
         """
@@ -66,15 +81,18 @@ class VoiceCall:
         """
         while self.active:
             if not self.muted:
-                print(self.call_members)
                 data = self.audio_input.read(self.CHUNK)
-                # Encrypt the data using the call's symmetrical key
-                data = self.aes.encrypt_bytes(self.key, data)
-                # The ips to send to
-                ips = list(self.call_members.keys())
-                # send the data to the ips
-                for ip in ips:
-                    self.socket.sendto(data, (ip, self.PORT))
+            else:
+                # If the mic is muted, send silence
+                data = b'\x00' * self.CHUNK * 2
+
+            # Encrypt the data using the call's symmetrical key
+            data = self.aes.encrypt_bytes(self.key, data)
+            # The ips to send to
+            ips = list(self.call_members.keys())
+            # send the data to the ips
+            for ip in ips:
+                self.socket.sendto(data, (ip, self.PORT))
 
     def receive_audio(self):
         """
@@ -106,7 +124,6 @@ class VoiceCall:
         """
         self.call_members[ip] = user
         wx.CallAfter(self.parent.call_grid.add_user, user)
-
 
     def remove_user(self, ip):
         """

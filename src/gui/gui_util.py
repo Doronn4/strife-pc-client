@@ -47,7 +47,8 @@ class User:
         self.pic = wx.Image('assets/group_pic.png', wx.BITMAP_TYPE_ANY)
         self.video_frame = None
         self.audio_output = None
-        self.last_update = 0
+        self.last_video_update = 0
+        self.last_audio_update = 0
         self.MAX_TIMEOUT = 3
         self.chat_id = chat_id
         self.call_on_update = []
@@ -72,7 +73,6 @@ class User:
         This method updates the user's profile picture.
 
         :return: None
-        :rtype: None
         """
         # Get the path to the user's profile picture.
         path = FileHandler.get_pfp_path(self.username)
@@ -106,7 +106,6 @@ class User:
         :param func: The function to be added.
         :type func: function
         :return: None
-        :rtype: None
         """
         self.call_on_update.append(func)
 
@@ -117,10 +116,9 @@ class User:
         :param frame: The new video frame.
         :type frame: numpy.ndarray
         :return: None
-        :rtype: None
         """
         self.video_frame = frame
-        self.last_update = time.time()
+        self.last_video_update = time.time()
 
     def get_frame(self):
         """
@@ -133,7 +131,7 @@ class User:
         frame = self.video_frame
         # If there is no video frame or the last update was more than MAX_TIMEOUT seconds ago,
         # return the user's profile picture as a bitmap.
-        if frame is None or time.time() - self.last_update > self.MAX_TIMEOUT:
+        if frame is None or time.time() - self.last_video_update > self.MAX_TIMEOUT:
             frame = self.pic.ConvertToBitmap()
 
         return frame
@@ -152,6 +150,7 @@ class User:
                                                 frames_per_buffer=VoiceCall.CHUNK)
         # Write the audio frame to the audio output.
         self.audio_output.write(audio_frame)
+        self.last_audio_update = time.time()
 
 
 class UserBox(wx.Panel):
@@ -853,7 +852,6 @@ class CallGrid(wx.GridSizer):
         :param user: A user object.
         :type user: User object.
         :return: None
-        :rtype: None
         """
         # Create a new CallUserPanel object with the provided user and store it in the list
         self.users_panels.append(CallUserPanel(self.parent, user))
@@ -869,7 +867,6 @@ class CallGrid(wx.GridSizer):
         :param username: The username of the user to remove.
         :type username: str
         :return: None
-        :rtype: None
         """
         # Loop through the user panels
         for panel in self.users_panels:
