@@ -369,10 +369,20 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
-        title = self.get_name_by_id(chat_id)
-        self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming voice call from {title}", chat_id, 'voice')
-        # Show the dialog
-        self.incoming_calls[chat_id].Popup()
+        # Check if there is already a call dialog for this chat
+        # And if there isn't an ongoing call for this chat
+        call_exists = False
+        if self.voice_call_window and self.voice_call_window.IsShown():
+            call_exists = self.voice_call_window.chat_id == chat_id
+        if self.voice_call_window and self.voice_call_window.IsShown():
+            call_exists = self.voice_call_window.chat_id == chat_id
+
+        if chat_id not in self.incoming_calls.keys() and not call_exists:
+            title = self.get_name_by_id(chat_id)
+            self.incoming_calls[chat_id] = gui_util.CallDialog\
+                (self, f"incoming voice call from {title}", chat_id, 'voice')
+            # Show the dialog
+            self.incoming_calls[chat_id].Popup()
 
     def onVideoStart(self, chat_id):
         """
@@ -381,10 +391,19 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
-        title = self.get_name_by_id(chat_id)
-        self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id, 'video')
-        # Show the dialog
-        self.incoming_calls[chat_id].Popup()
+        # Check if there is already a call dialog for this chat
+        # And if there isn't an ongoing call for this chat
+        call_exists = False
+        if self.voice_call_window and self.voice_call_window.IsShown():
+            call_exists = self.voice_call_window.chat_id == chat_id
+        if self.voice_call_window and self.voice_call_window.IsShown():
+            call_exists = self.voice_call_window.chat_id == chat_id
+
+        if chat_id not in self.incoming_calls.keys() and not call_exists:
+            title = self.get_name_by_id(chat_id)
+            self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id, 'video')
+            # Show the dialog
+            self.incoming_calls[chat_id].Popup()
 
     def on_join(self, chat_id):
         """
