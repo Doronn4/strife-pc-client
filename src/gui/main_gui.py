@@ -393,6 +393,12 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
+        # Hang up ongoing calls
+        if self.voice_call_window:
+            self.voice_call_window.onHangup(None)
+        if self.video_call_window:
+            self.video_call_window.onHangup(None)
+
         dialog = self.incoming_calls[chat_id]
         if dialog.call_type == 'video':
             msg = Protocol.join_video(chat_id)
