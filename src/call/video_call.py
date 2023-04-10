@@ -62,6 +62,11 @@ class VideoCall:
         while self.active:
             # Send video only if the flag is on
             if self.transmit_video:
+
+                # If the camera is not initiated, continue
+                if not self.camera:
+                    continue
+
                 frame = self.camera.read()
 
                 # Update the current user's video frame
