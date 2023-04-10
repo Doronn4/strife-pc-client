@@ -74,7 +74,7 @@ class VoiceCall:
             call_members_copy = self.call_members.copy()
             for ip, user in call_members_copy.items():
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
-                    self.remove_user(ip)
+                    self.parent.remove_user(ip)
 
     def send_audio(self):
         """
@@ -135,7 +135,6 @@ class VoiceCall:
         Removes a user from the call
         """
         if ip in self.call_members.keys():
-            self.parent.call_grid.remove_user(self.call_members[ip].username)
             del self.call_members[ip]
             # Create a sound object
             join_sound = wx.adv.Sound("sounds/call_leave.wav")

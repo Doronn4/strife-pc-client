@@ -1095,6 +1095,18 @@ class CallWindow(wx.Frame):
         if self.is_video:
             self.video_call.toggle_video()
 
+    def remove_user(self, ip):
+        """
+        Removes the user with the given IP from the call.
+        :param ip: The IP of the user.
+        :type ip: str
+        """
+        if self.is_video:
+            self.video_call.remove_user(ip)
+        self.voice_call.remove_user(ip)
+        self.call_grid.remove_user(self.call_members[ip].username)
+        del self.call_members[ip]
+
 
 class MessagesPanel(ScrolledPanel):
     """
