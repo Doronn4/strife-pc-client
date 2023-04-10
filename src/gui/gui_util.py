@@ -1104,7 +1104,7 @@ class CallWindow(wx.Frame):
         if self.is_video:
             self.video_call.remove_user(ip)
         self.voice_call.remove_user(ip)
-        self.call_grid.remove_user(self.call_members[ip].username)
+        self.call_grid.remove_user(self.get_user_by_ip(ip).username)
         del self.call_members[ip]
 
 
