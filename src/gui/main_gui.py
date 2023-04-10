@@ -424,7 +424,7 @@ class MainPanel(wx.Panel):
         """
         active_call = False
 
-        if type(event) == wx.Event:
+        if type(event) != int:
             chat_id = self.groups_panel.sizer.current_group_id
         else:
             chat_id = event
@@ -441,7 +441,7 @@ class MainPanel(wx.Panel):
             self.voice_call_window.Show()
 
         # If the call was started by the current user, send a start voice message to the server
-        if type(event) == wx.Event:
+        if type(event) != int:
             msg = Protocol.start_voice(chat_id)
             self.parent.general_com.send_data(msg)
 
