@@ -741,7 +741,6 @@ class CallUserPanel(wx.Panel):
 
         # Get the initial frame for the user and set it as a wx.Bitmap object
         self.bmp = self.user.get_frame()
-        self.bmp: wx.Bitmap
 
         # Set up the label for the user's username
         self.label = wx.StaticText(self, label=self.user.username)
@@ -875,8 +874,10 @@ class CallGrid(wx.GridSizer):
             if panel.user.username == username:
                 # Remove the panel from the grid sizer
                 index = self.users_panels.index(panel)
+                self.Remove(index)
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
+                panel: CallUserPanel
                 panel.DestroyLater()
                 break
 
@@ -941,6 +942,11 @@ class CallWindow(wx.Frame):
         # Initialize the sizer
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
+        # Create the title of the window and it's font
+        self.title = wx.StaticText(self, label=title)
+        font = wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        self.title.SetFont(font)
+
         # Initialize the call grid
         self.call_grid = CallGrid(self)
 
@@ -971,7 +977,8 @@ class CallWindow(wx.Frame):
         self.toolbar.Add(self.leave_call_button, 1, wx.ALIGN_CENTER)
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
-        # Add the call grid and toolbar to the sizer
+        # Add the title, call grid and toolbar to the sizer
+        self.sizer.Add(self.title, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
         self.sizer.Add(self.call_grid, 3, wx.EXPAND)
         self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
 
