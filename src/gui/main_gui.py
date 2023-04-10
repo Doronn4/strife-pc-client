@@ -457,21 +457,26 @@ class MainPanel(wx.Panel):
         :return: -
         """
         active_call = False
+
+        if type(event) != int:
+            chat_id = self.groups_panel.sizer.current_group_id
+        else:
+            chat_id = event
+
         if self.voice_call_window:
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
 
         if not active_call:
-            title = self.get_name_by_id(self.groups_panel.sizer.current_group_id)
-            key = KeysManager.get_chat_key(self.groups_panel.sizer.current_group_id)
-            self.video_call_window = gui_util.CallWindow(self, title, self.groups_panel.sizer.current_group_id, key,
-                                                         video=True)
+            title = self.get_name_by_id(chat_id)
+            key = KeysManager.get_chat_key(chat_id)
+            self.video_call_window = gui_util.CallWindow(self, title, chat_id, key, video=True)
             self.video_call_window.Show()
 
-        # If the call was started by the current user, send a start video message to the server
-        if event:
-            msg = Protocol.start_video(self.groups_panel.sizer.current_group_id)
+        # If the call was started by the current user, send a start voice message to the server
+        if type(event) != int:
+            msg = Protocol.start_video(chat_id)
             self.parent.general_com.send_data(msg)
 
         # Create a sound object
