@@ -814,11 +814,11 @@ class CallUserPanel(wx.Panel):
         :rtype: wx.Bitmap
         """
         # Convert the bitmap to a wx.Image object
-        image = wx.ImageFromBitmap(bitmap)
+        image = bitmap.ConvertToImage()
         # Scale the image
         image = image.Scale(width, height, wx.IMAGE_QUALITY_HIGH)
         # Convert the image back to a wx.Bitmap object
-        result = wx.BitmapFromImage(image)
+        result = wx.Bitmap(image)
         return result
 
 
