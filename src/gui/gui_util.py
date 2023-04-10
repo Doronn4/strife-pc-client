@@ -978,7 +978,7 @@ class CallWindow(wx.Frame):
         self.toolbar.Add(self.camera_button, 1, wx.ALIGN_CENTER)
 
         # Add the title, call grid and toolbar to the sizer
-        self.sizer.Add(self.title, 1, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
+        self.sizer.Add(self.title, 1, wx.ALIGN_LEFT)
         self.sizer.Add(self.call_grid, 3, wx.EXPAND)
         self.sizer.Add(self.toolbar, 1, wx.ALIGN_CENTER)
 
