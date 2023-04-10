@@ -59,13 +59,13 @@ class VideoCall:
         """
         Sends the video to the other users in the call
         """
+
+        while not self.camera:
+            time.sleep(0.1)
+
         while self.active:
             # Send video only if the flag is on
             if self.transmit_video:
-
-                # If the camera is not initiated, continue
-                if not self.camera:
-                    continue
 
                 frame = self.camera.read()
 
