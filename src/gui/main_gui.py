@@ -160,7 +160,6 @@ class MainPanel(wx.Panel):
         :param status: The user's status
         :return: None
         """
-        print('Updating status of', username, 'to', status)
         user = MainPanel.get_user_by_name(username)
         user.update_status(status)
 
