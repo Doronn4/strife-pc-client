@@ -7,6 +7,8 @@ import wx
 from pubsub import pub
 import base64
 import sys
+# Import wx inspection tool
+import wx.lib.inspection
 
 
 # Add the project folder to PYTHONPATH
@@ -156,7 +158,7 @@ def handle_file_in_chat(message):
         chat_id = message['chat_id']
         # Get the path of the selected file
         file_path = dialog.GetPath()
-        # B64 deocde the contents
+        # B64 decode the contents
         file_contents = base64.b64decode(message['file_contents'])
         # Decrypt the file contents using the chat key
         decrypted_contents = AESCipher.decrypt_bytes(KeysManager.get_chat_key(chat_id), file_contents)
@@ -416,6 +418,7 @@ def main():
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,
                            chats_com=chats_com, files_com=files_com)
     main_frame.Show()
+    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
     # When the GUI is closed, close the threads

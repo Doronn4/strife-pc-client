@@ -352,6 +352,7 @@ def check_password(password: str) -> str:
     else:
         return None
 
+
 def check_username(username: str) -> str:
     """
     Checks if the username is valid (returns an error string if not)

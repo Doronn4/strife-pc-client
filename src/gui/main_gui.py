@@ -31,6 +31,7 @@ class MainPanel(wx.Panel):
         self.VIDEO_BUTTON_IMAGE = wx.Image("assets/video.png", wx.BITMAP_TYPE_ANY)
         self.LOGOUT_BUTTON_IMAGE = wx.Image("assets/logout.png", wx.BITMAP_TYPE_ANY)
         self.SETTINGS_BUTTON_IMAGE = wx.Image("assets/settings.png", wx.BITMAP_TYPE_ANY)
+        self.ADD_FRIEND_BUTTON_IMAGE = wx.Image("assets/add_friend.png", wx.BITMAP_TYPE_ANY)
 
         self.RELATIVE_BUTTON_SIZE = 0.04
         self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
@@ -82,7 +83,11 @@ class MainPanel(wx.Panel):
         # Bind the settings button to it's function
         self.settings_button.Bind(wx.EVT_BUTTON, self.onSettings)
 
-        self.add_friend_button = wx.Button(self, label='Add friend')
+        image_bitmap = self.ADD_FRIEND_BUTTON_IMAGE.Scale(
+            wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE,
+            wx.DisplaySize()[0] * self.RELATIVE_SIZE * self.RELATIVE_BUTTON_SIZE).ConvertToBitmap()
+        self.add_friend_button = wx.Button(self)
+        self.add_friend_button.SetBitmap(image_bitmap)
         self.add_friend_button.Bind(wx.EVT_BUTTON, self.onAddFriend)
 
         # Add all the widgets in the top bar to the sizer
@@ -155,6 +160,7 @@ class MainPanel(wx.Panel):
         :param status: The user's status
         :return: None
         """
+        print('Updating status of', username, 'to', status)
         user = MainPanel.get_user_by_name(username)
         user.update_status(status)
 
@@ -557,10 +563,18 @@ class MainPanel(wx.Panel):
         :rtype: gui_util.User
         """
         user_found = None
+
+        # If the user is the current user, return the current user
+        if username == gui_util.User.this_user.username:
+            return gui_util.User.this_user
+
+        # Search for the user in the known users list
         for user in MainPanel.known_users:
             if user.username == username:
                 user_found = user
                 break
+
+        # If the user was not found, create a new user object
         if not user_found:
             user_found = gui_util.User(username=username)
             MainPanel.known_users.append(user_found)

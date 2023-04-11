@@ -196,13 +196,16 @@ class UserBox(wx.Panel):
 
         # Add the username to the vertical sizer
         self.username_text = wx.StaticText(self, label=self.user.username)
+        # Create the font for the username
+        font = wx.Font(13, wx.DEFAULT, wx.NORMAL, wx.BOLD)
+        self.username_text.SetFont(font)
         self.username_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(self.username_text, 0, wx.ALIGN_CENTER)
+        self.vsizer.Add(self.username_text, 3, wx.ALIGN_CENTER)
 
         # Add the status to the vertical sizer
         self.status_text = wx.StaticText(self, label=self.user.status)
         self.status_text.Bind(wx.EVT_LEFT_DOWN, self.handle_click)
-        self.vsizer.Add(self.status_text, 0, wx.ALIGN_CENTER)
+        self.vsizer.Add(self.status_text, 2, wx.ALIGN_CENTER)
 
         if align_right:
             # Add the vertical sizer to the horizontal sizer
@@ -252,7 +255,6 @@ class UserBox(wx.Panel):
         Updates the user profile picture displayed on the UserBox panel.
 
         :return: None
-        :rtype: None
         """
         # Scale the picture to the appropriate size
         pic = self.user.pic \
@@ -1601,32 +1603,45 @@ class GroupsSwitcher(wx.BoxSizer):
         """
         group_panel = wx.Panel(self.parent)
 
+        # Create the group members panel.
         group_members = UsersScrollPanel(group_panel)
         group_messages = MessagesPanel(group_panel)
         chat_tools = ChatTools(group_panel, group_id)
         chat_sizer = wx.BoxSizer(wx.VERTICAL)
         chat_sizer.Add(group_messages, 6, wx.EXPAND)
         chat_sizer.Add(chat_tools, 1, wx.EXPAND)
-        add_group_member_button = wx.Button(group_panel, label='Add group member', id=group_id)
+        add_group_member_button = wx.Button(group_panel, id=group_id)
+        add_group_member_image = wx.Image('assets/add_group_member.png', wx.BITMAP_TYPE_ANY)
         add_group_member_button.Bind(wx.EVT_BUTTON, self.onGroupMemberAdd)
 
+        # Add the group to the switcher.
         self.groups[group_id] = (group_messages, group_members, chat_tools)
 
+        # Add the users to the group members panel.
         for user in users:
             group_members.add_user(user)
 
+        # Add the group members panel to the group panel.
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(chat_sizer, 3, wx.EXPAND)
 
+        # Add the group members panel to the group panel.
         right_bar_sizer = wx.BoxSizer(wx.VERTICAL)
         right_bar_sizer.Add(group_members, 6, wx.EXPAND)
         right_bar_sizer.Add(add_group_member_button, 1, wx.EXPAND)
 
+        # Add the group members panel to the group panel.
         sizer.Add(right_bar_sizer, 1, wx.EXPAND)
         group_panel.SetSizer(sizer)
 
+        # Add the group panel to the switcher.
         self.Add(group_panel, 1, wx.EXPAND)
         group_panel.Hide()
+
+        # Resize the add group member button image.
+        button_size = add_group_member_button.GetSize()
+        add_group_member_image = resize_image_keep_ratio(add_group_member_image, button_size[0])
+        add_group_member_button.SetBitmap(wx.Bitmap(add_group_member_image))
 
         self.groups_panels[group_id] = group_panel
 
@@ -1689,6 +1704,7 @@ class GroupsSwitcher(wx.BoxSizer):
             if id_ == chat_id:
                 group_panel.Show()
                 self.current_group_id = chat_id
+                wx.CallAfter(group_panel.Refresh)
             else:
                 # and hide the rest
                 group_panel.Hide()
@@ -2001,6 +2017,25 @@ def resize_image(image, target_width, target_height):
         # portrait orientation or square
         new_height = target_height
         new_width = int(round(new_height * aspect_ratio))
+
+    image = image.Scale(new_width, new_height, quality=wx.IMAGE_QUALITY_HIGH)
+    return image
+
+
+def resize_image_keep_ratio(image, target_width):
+    """
+    Resizes an image to fit within the given dimensions.
+    :param image: The image to resize.
+    :type image: wx.Image
+    :param target_width: The target width.
+    :type target_width: int
+    :return: The resized image.
+    """
+    width, height = image.GetSize()
+    aspect_ratio = width / float(height)
+
+    new_width = target_width
+    new_height = int(round(new_width / aspect_ratio))
 
     image = image.Scale(new_width, new_height, quality=wx.IMAGE_QUALITY_HIGH)
     return image
