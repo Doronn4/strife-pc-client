@@ -10,6 +10,58 @@ class KeysManager:
     NOT_INITIALIZED_YET = Exception('Keys manager not initialized yet')
 
     # Initialize the following variables as class variables:
+    # chats_keys: a dictionary that will store the keys for each chat
+    chats_keys = {}
+    last_password = None
+
+    @staticmethod
+    def load_keys(keys: list, chat_ids: list, password: str):
+
+        password = password.zfill(32)
+
+        for i in range(len(keys)):
+            enc_key = keys[i]
+            chat_id = chat_ids[i]
+            key = AESCipher.decrypt(password, enc_key)
+            KeysManager.chats_keys[chat_id] = key
+
+        # Sets the last_password attribute to the given password.
+        KeysManager.last_password = password
+
+    @staticmethod
+    def get_chat_key(chat_id) -> str:
+        """
+        Returns the key of a given chat_id.
+        :param chat_id: An integer representing the chat_id.
+        :type chat_id: int
+        :return: The key of a given chat_id.
+        :rtype: str
+        """
+        # Raises NOT_INITIALIZED_YET exception if chats_keys dictionary is empty.
+        if len(KeysManager.chats_keys) == 0:
+            raise KeysManager.NOT_INITIALIZED_YET
+
+        return KeysManager.chats_keys[chat_id]
+
+    @staticmethod
+    def add_key(chat_id: int, key):
+        """
+        Adds a key for a specified chat_id to the chat keys dictionary.
+
+        :param chat_id: an integer representing the chat id for which to add the key
+        :type chat_id: int
+        :param key: the key to add
+        :type key: str
+        :return: None
+        """
+        KeysManager.chats_keys[chat_id] = key
+
+
+class OldKeysManager:
+    # Define an exception for when the keys manager is not initialized yet
+    NOT_INITIALIZED_YET = Exception('Keys manager not initialized yet')
+
+    # Initialize the following variables as class variables:
     # public_key: stores the public key
     # private_key: stores the private key
     # server_key: stores the server key

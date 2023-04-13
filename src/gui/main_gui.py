@@ -194,6 +194,10 @@ class MainPanel(wx.Panel):
                 msg = Protocol.request_user_pfp(other_username)
                 # Send the message to the server
                 self.parent.general_com.send_data(msg)
+                # Construct a message to request the user's status
+                msg = Protocol.request_user_status(other_username)
+                # Send the message to the server
+                self.parent.general_com.send_data(msg)
             else:
                 # If it's a group chat
                 # Create a user object for the group
@@ -267,6 +271,9 @@ class MainPanel(wx.Panel):
         self.parent.general_com.send_data(msg)
 
         msg = Protocol.request_user_pfp(friend_username)
+        self.parent.general_com.send_data(msg)
+
+        msg = Protocol.request_user_status(friend_username)
         self.parent.general_com.send_data(msg)
 
         KeysManager.add_key(int(chat_id), friends_key)

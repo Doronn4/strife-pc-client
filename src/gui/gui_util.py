@@ -911,7 +911,7 @@ class CallWindow(wx.Frame):
                                 ^ wx.MAXIMIZE_BOX ^ wx.SYSTEM_MENU ^ wx.CLOSE_BOX)
 
         # Constants
-        self.MUTE_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
+        self.MUTE_BUTTON_IMAGE = wx.Image("assets/unmute.png", wx.BITMAP_TYPE_ANY)
         self.MUTED_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
         self.LEAVE_BUTTON_IMAGE = wx.Image("assets/leave.png", wx.BITMAP_TYPE_ANY)
         self.CAMERA_ON_IMAGE = wx.Image("assets/turn_off_camera.png", wx.BITMAP_TYPE_ANY)
@@ -1084,6 +1084,10 @@ class CallWindow(wx.Frame):
         :type event: wx.Event
         """
         self.voice_call.toggle_mute()
+        # Change the mute button's bitmap
+        bit = (self.MUTED_BUTTON_IMAGE if self.voice_call.muted else self.MUTE_BUTTON_IMAGE)\
+            .Scale(self.mute_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
+        self.mute_button.SetBitmap(bit)
 
     def onHangup(self, event):
         """
@@ -1116,6 +1120,10 @@ class CallWindow(wx.Frame):
         """
         if self.is_video:
             self.video_call.toggle_video()
+            # Change the camera button's bitmap
+            bit = (self.CAMERA_ON_IMAGE if self.video_call.transmit_video else self.CAMERA_OFF_IMAGE)\
+                .Scale(self.camera_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
+            self.camera_button.SetBitmap(bit)
 
     def remove_user(self, ip):
         """

@@ -54,7 +54,9 @@ class Protocol:
         10: 'chats_list',
         11: 'group_members',
         12: 'user_status',
-        13: 'friend_added'
+        13: 'friend_added',
+        14: 'friend_list',
+        15: 'keys'
     }
     s_chat_opcodes = {
         1: 'text_message',
@@ -85,7 +87,8 @@ class Protocol:
         'file_description': ('chat_id', 'sender', 'file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents'),
-        'chat_history': ('messages',)
+        'chat_history': ('messages',),
+        'keys': ('keys', 'chat_ids')
     }
 
     @staticmethod
