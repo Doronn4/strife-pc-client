@@ -278,6 +278,17 @@ def handle_password_change_ans(message):
     wx.CallAfter(pub.sendMessage, 'password_answer', is_valid=is_valid)
 
 
+def handle_keys(message):
+    keys = message['keys']
+    chat_ids = message['chat_ids']
+
+    if type(keys) != list:
+        keys = [keys]
+        chat_ids = [chat_ids]
+
+    wx.CallAfter(pub.sendMessage, 'keys', keys=keys, chat_ids=chat_ids)
+
+
 # The dictionary that contains the functions to handle the messages of rejection and approval
 approve_reject_dict = {
     1: handle_register_ans,
@@ -301,7 +312,8 @@ general_dict = {
     'voice_user_joined': handle_voice_joined,
     'video_user_joined': handle_video_joined,
     'voice_call_started': handle_voice_started,
-    'video_call_started': handle_video_started
+    'video_call_started': handle_video_started,
+    'keys': handle_keys
 }
 
 # The dictionary that contains the functions to handle the chats messages of the server
@@ -410,7 +422,6 @@ def main():
     wd = script_path.parent.parent.parent
     os.chdir(str(wd))
     # Initialize the keys manager and the file handler
-    KeysManager.initialize(str(wd) + '\\keys')
     FileHandler.initialize(str(wd) + '\\files')
 
     # Start the GUI

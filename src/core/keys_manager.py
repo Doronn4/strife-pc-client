@@ -16,13 +16,23 @@ class KeysManager:
 
     @staticmethod
     def load_keys(keys: list, chat_ids: list, password: str):
+        """
+        Loads the keys of the chats.
+        :param keys: The keys of the chats.
+        :type keys: list
+        :param chat_ids: The chat_ids of the chats.
+        :type chat_ids: list
+        :param password: The password of the user.
+        :type password: str
+        :return: -
+        """
 
-        password = password.zfill(32)
+        password = password.ljust(32, '0')
+        print(password, len(password))
 
         for i in range(len(keys)):
-            enc_key = keys[i]
+            key = keys[i]
             chat_id = chat_ids[i]
-            key = AESCipher.decrypt(password, enc_key)
             KeysManager.chats_keys[chat_id] = key
 
         # Sets the last_password attribute to the given password.

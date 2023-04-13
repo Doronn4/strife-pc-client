@@ -288,6 +288,19 @@ class LoginPanel(wx.Panel):
         self.SetSizer(self.sizer)
 
         pub.subscribe(self.onLoginAnswer, 'login')
+        pub.subscribe(self.onKeys, 'keys')
+
+    def onKeys(self, keys, chat_ids):
+        """
+        This function is called when the server answers to the keys request
+        :param keys: The keys of the chats
+        :type keys: list
+        :param chat_ids: The ids of the chats
+        :type chat_ids: list
+        :return: -
+        """
+        # Load the chats keys with the password
+        KeysManager.load_keys(keys, chat_ids, self.password_input.GetValue())
 
     def onLoginAnswer(self, is_valid):
         """
@@ -296,8 +309,8 @@ class LoginPanel(wx.Panel):
         :return: None
         """
         if is_valid:
-            # Load the chats keys with the password
-            KeysManager.load_keys(self.password_input.GetValue())
+            msg = Protocol.request_keys()
+            self.parent.general_com.send_data(msg)
             self.parent.move_to_main()
         else:
             gui_util.User.this_user = None

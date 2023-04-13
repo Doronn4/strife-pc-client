@@ -29,7 +29,10 @@ class Protocol:
         'request_user_picture': 17,
         'request_user_status': 18,
         'request_chats': 19,
-        'accept_friend': 20
+        'accept_friend': 20,
+        'request_friend_list': 21,
+        'logout': 22,
+        'request_keys': 23
     }
     chat_opcodes = {
         'text_message': 1,
@@ -88,7 +91,7 @@ class Protocol:
         'file_in_chat': ('chat_id', 'file_name', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents'),
         'chat_history': ('messages',),
-        'keys': ('keys', 'chat_ids')
+        'keys': ('chat_ids', 'keys')
     }
 
     @staticmethod
@@ -460,6 +463,20 @@ class Protocol:
         
         kind = Protocol.chat_opcodes['file_description']
         msg = f"{kind}{Protocol.FIELD_SEPARATOR}{str(chat_id).zfill(3)}{Protocol.FIELD_SEPARATOR}{sender_username}{Protocol.FIELD_SEPARATOR}{filename}{Protocol.FIELD_SEPARATOR}{file_size}{Protocol.FIELD_SEPARATOR}{file_hash}"
+        return msg
+
+    @staticmethod
+    def request_keys():
+        """
+        A static method for creating a request keys message
+        :return: the message after protocol
+        """
+
+        # Get the opcode of request_keys
+        opcode = Protocol.general_opcodes['request_keys']
+        # Construct the message
+        msg = f"{str(opcode).zfill(2)}"
+        # Return the message after protocol
         return msg
 
     @staticmethod

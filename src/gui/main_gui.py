@@ -671,7 +671,6 @@ class MainFrame(wx.Frame):
         :type event: wx.Event
         :return: -
         """
-        KeysManager.save_keys()
         self.general_com.close()
         self.chats_com.close()
         self.files_com.close()
