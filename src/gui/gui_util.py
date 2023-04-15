@@ -747,7 +747,7 @@ class CallUserPanel(wx.Panel):
         # Set up the label for the user's username
         self.label = wx.StaticText(self, label=self.user.username)
         # Set the font, size and color of the label
-        label_font = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        label_font = wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         self.label.SetFont(label_font)
 
         # Set up the timer for getting new frames and refreshing the display
@@ -756,6 +756,11 @@ class CallUserPanel(wx.Panel):
 
         # Bind events to their respective methods
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.onRefresh)
+
+    def onRefresh(self, event):
+        wx.CallAfter(self.label.SetPosition, (0, self.GetSize()[1] - self.label.GetSize()[1]))
+        event.Skip()
 
     def init_timer(self):
         """
@@ -1181,6 +1186,7 @@ class MessagesPanel(ScrolledPanel):
         self.Layout()
         self.Refresh()
         self.SetupScrolling()
+        wx.CallAfter(self.Scroll, 0, self.GetVirtualSize()[1])
 
     def add_text_message_top(self, sender: User, message: str):
         """
@@ -1203,6 +1209,7 @@ class MessagesPanel(ScrolledPanel):
         self.Layout()
         self.Refresh()
         self.SetupScrolling()
+        wx.CallAfter(self.Scroll, 0, self.GetVirtualSize()[1])
 
     def add_file_description(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
         """
@@ -1232,6 +1239,7 @@ class MessagesPanel(ScrolledPanel):
         self.Layout()
         self.Refresh()
         self.SetupScrolling()
+        wx.CallAfter(self.Scroll, 0, self.GetVirtualSize()[1])
 
     def add_file_description_top(self, chat_id, sender: User, file_name: str, file_size: int, file_hash):
         """
@@ -1259,6 +1267,7 @@ class MessagesPanel(ScrolledPanel):
         self.Layout()
         self.Refresh()
         self.SetupScrolling()
+        wx.CallAfter(self.Scroll, 0, self.GetVirtualSize()[1])
 
     def reset_messages(self):
         """
@@ -1330,14 +1339,14 @@ class ChatTools(wx.Panel):
             file_path = dialog.GetPath()
             # Load the contents of the file
             file_contents = FileHandler.load_file(file_path)
-            # Encrypt the file contents with the chat key
-            enc_contents = AESCipher.encrypt_bytes(KeysManager.get_chat_key(self.chat_id), file_contents)
             # Encode the file contents in base64 format
-            b64_contents = base64.b64encode(enc_contents).decode()
+            b64_contents = base64.b64encode(file_contents).decode()
+            # Encrypt the base64 file contents with the chat key
+            enc_contents = AESCipher.encrypt(KeysManager.get_chat_key(self.chat_id), b64_contents)
             # Construct a message to send the file to the server
-            msg = Protocol.send_file(self.chat_id, os.path.basename(file_path), b64_contents)
+            msg = Protocol.send_file(self.chat_id, os.path.basename(file_path), enc_contents)
             # Get the file hash
-            file_hash = hashlib.sha256(b64_contents.encode()).hexdigest()
+            file_hash = hashlib.sha256(enc_contents.encode()).hexdigest()
             # Send the message to the server
             self.parent.GetParent().parent.parent.files_com.send_data(msg)
             # File description msg
@@ -1362,6 +1371,7 @@ class ChatTools(wx.Panel):
             except Exception as e:
                 pass
             else:
+                print("Sending message: " + raw_message, 'with key: ', chat_key, 'to chat: ', self.chat_id)
                 encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
                 msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
                 self.parent.GetParent().parent.parent.chats_com.send_data(msg)
@@ -1520,13 +1530,14 @@ class GroupsSwitcher(wx.BoxSizer):
         pub.subscribe(self.onGroupMembers, 'group_members')
         pub.subscribe(self.onChatHistory, 'chat_history')
 
-    def onChatHistory(self, messages):
+    def onChatHistory(self, messages, chat_id):
         """
         Called when the client receives a chat history from the server.
+        :param chat_id: The ID of the chat.
+        :type chat_id: int
         :param messages: The messages in the chat history.
         :type messages: list
         """
-        chat_id = messages[0]['chat_id']
         self.groups[chat_id][0].reset_messages()
 
         for msg in messages:
@@ -1558,7 +1569,7 @@ class GroupsSwitcher(wx.BoxSizer):
         :param chat_id: The id of the chat the message was sent to.
         :type chat_id: int
         :param raw_message: The raw message.
-        :type raw_message: bytes
+        :type raw_message: str
         """
         try:
             chat_key = KeysManager.get_chat_key(chat_id)
@@ -1713,6 +1724,7 @@ class GroupsSwitcher(wx.BoxSizer):
                 group_panel.Show()
                 self.current_group_id = chat_id
                 wx.CallAfter(group_panel.Refresh)
+                # wx.CallAfter(self.groups[id_][0].Scroll, 0, self.groups[id_][0].GetVirtualSize()[1])
             else:
                 # and hide the rest
                 group_panel.Hide()
@@ -1980,9 +1992,9 @@ class CallDialog(wx.PopupTransientWindow):
                                parent.GetPosition().y + parent.GetSize().y / 2 - self.GetSize().y / 2), size_to_set)
 
         # Create a sound object
-        self.call_sound = wx.adv.Sound("sounds/call.wav")
+        self.call_sound = wx.adv.Sound("sounds/strife_ring.wav")
         # Play the sound
-        self.call_sound.Play(wx.adv.SOUND_ASYNC)
+        self.call_sound.Play(wx.adv.SOUND_LOOP)
 
     def on_join(self, event):
         """

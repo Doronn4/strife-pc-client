@@ -108,13 +108,15 @@ class VoiceCall:
             data = self.aes.decrypt_bytes(self.key, data)
 
             ip = addr[0]
-            
+
+            # If the user is not in the call, add them
             if ip not in self.call_members.keys():
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
                 else:
                     continue
 
+            # Update the user's audio
             self.call_members[ip].update_audio(data)
 
     def add_user(self, ip, user):

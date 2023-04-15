@@ -1,7 +1,4 @@
-import os
-import sys
 import threading
-
 import wx
 import wx.adv
 import src.gui.gui_util as gui_util
@@ -190,6 +187,7 @@ class MainPanel(wx.Panel):
                 self.friends_panel.add_user(user)
                 # Create a group to represent the chat with the friend
                 self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user, user])
+
                 # Construct a message to request the user's profile pic
                 msg = Protocol.request_user_pfp(other_username)
                 # Send the message to the server
@@ -466,6 +464,10 @@ class MainPanel(wx.Panel):
         else:
             chat_id = event
 
+        # Check if there is a chat selected
+        if chat_id == -1:
+            return
+
         if self.voice_call_window:
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
@@ -499,6 +501,10 @@ class MainPanel(wx.Panel):
             chat_id = self.groups_panel.sizer.current_group_id
         else:
             chat_id = event
+
+        # Check if there is a chat selected
+        if chat_id == -1:
+            return
 
         if self.voice_call_window:
             active_call = self.voice_call_window.IsShown()
@@ -553,11 +559,12 @@ class MainPanel(wx.Panel):
         MainPanel.my_friends = []
         self.friends_panel.reset_friends()
         self.groups_panel.sizer.reset_groups()
+        self.groups_panel.sizer.current_group_id = None
         threading.Thread(target=lambda: self.parent.general_com.reconnect()).start()
         threading.Thread(target=lambda: self.parent.chats_com.reconnect()).start()
         threading.Thread(target=lambda: self.parent.files_com.reconnect()).start()
         # Move back to the login panel
-        self.parent.panel_switcher.Show(self.parent.login_panel)
+        self.parent.logout()
 
     @staticmethod
     def get_user_by_name(username):
@@ -663,6 +670,13 @@ class MainFrame(wx.Frame):
         self.main_panel = MainPanel(self)
         self.panel_switcher.add_panel(self.main_panel)
         self.panel_switcher.Show(self.main_panel)
+
+    def logout(self):
+        self.login_panel.password_input.SetValue('')
+        self.login_panel.username_input.SetValue('')
+        self.register_panel.password_input.SetValue('')
+        self.register_panel.username_input.SetValue('')
+        self.panel_switcher.Show(self.login_panel)
 
     def onClose(self, event):
         """

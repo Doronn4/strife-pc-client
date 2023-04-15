@@ -90,7 +90,7 @@ class Protocol:
         'file_description': ('chat_id', 'sender', 'file_name', 'file_size', 'file_hash'),
         'file_in_chat': ('chat_id', 'file_name', 'file_contents'),
         'user_profile_picture': ('pfp_username', 'image_contents'),
-        'chat_history': ('messages',),
+        'chat_history': ('messages', 'chat_id'),
         'keys': ('chat_ids', 'keys')
     }
 
@@ -440,7 +440,6 @@ class Protocol:
         :return: the message after protocol
         """
 
-        # TODO: Check if hash is really needed to be send
         # Get the opcode of send_file
         kind = Protocol.files_opcodes['file_in_chat']
         # Construct the message

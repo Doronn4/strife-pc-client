@@ -158,12 +158,12 @@ def handle_file_in_chat(message):
         chat_id = message['chat_id']
         # Get the path of the selected file
         file_path = dialog.GetPath()
-        # B64 decode the contents
-        file_contents = base64.b64decode(message['file_contents'])
         # Decrypt the file contents using the chat key
-        decrypted_contents = AESCipher.decrypt_bytes(KeysManager.get_chat_key(chat_id), file_contents)
+        file_contents_b64 = AESCipher.decrypt(KeysManager.get_chat_key(chat_id), message['file_contents'])
+        # B64 decode the contents
+        file_contents = base64.b64decode(file_contents_b64)
         # Save the file using the FileHandler
-        FileHandler.save_file(decrypted_contents, file_path)
+        FileHandler.save_file(file_contents, file_path)
 
     dialog.Destroy()
 
@@ -183,7 +183,7 @@ def handle_chat_history(message):
         msg_params = Protocol.unprotocol_msg('chat', msg)
         messages_params.append(msg_params)
     
-    wx.CallAfter(pub.sendMessage, 'chat_history', messages=messages_params)
+    wx.CallAfter(pub.sendMessage, 'chat_history', messages=messages_params, chat_id=message['chat_id'])
 
 
 def handle_voice_info(message):
@@ -402,15 +402,15 @@ def handle_files_messages(com, q):
 def main():
     # Create the communication objects, the queues and start the threads
     general_queue = queue.Queue()
-    general_com = ClientCom(1000, config.server_ip, general_queue)
+    general_com = ClientCom(3108, config.server_ip, general_queue)
     threading.Thread(target=handle_general_messages, args=(general_com, general_queue,), daemon=True).start()
 
     chats_queue = queue.Queue()
-    chats_com = ClientCom(2000, config.server_ip, chats_queue, com_type='chats')
+    chats_com = ClientCom(2907, config.server_ip, chats_queue, com_type='chats')
     threading.Thread(target=handle_chats_messages, args=(chats_com, chats_queue,), daemon=True).start()
 
     files_queue = queue.Queue()
-    files_com = ClientCom(3000, config.server_ip, files_queue, com_type='files')
+    files_com = ClientCom(3103, config.server_ip, files_queue, com_type='files')
     threading.Thread(target=handle_files_messages, args=(files_com, files_queue,), daemon=True).start()
 
     # Wait for the connection to the server

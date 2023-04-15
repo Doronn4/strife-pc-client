@@ -28,8 +28,6 @@ class KeysManager:
         """
 
         password = password.ljust(32, '0')
-        print(password, len(password))
-
         for i in range(len(keys)):
             key = keys[i]
             chat_id = chat_ids[i]
