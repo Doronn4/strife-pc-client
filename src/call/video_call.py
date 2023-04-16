@@ -52,7 +52,11 @@ class VideoCall:
         """
         Initiates the camera handler object
         """
-        self.camera = CameraHandler()
+        try:
+            self.camera = CameraHandler()
+        except Exception:
+            self.toggle_video()
+            self.parent.onCameraToggle(None)
 
     def send_video(self):
         """
@@ -131,7 +135,10 @@ class VideoCall:
         """
         Toggles the video transmission
         """
-        self.transmit_video = not self.transmit_video
+        if self.camera.active or not self.transmit_video:
+            self.transmit_video = not self.transmit_video
+        else:
+            self._initiate_camera()
 
     def _start(self):
         """
