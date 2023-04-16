@@ -42,8 +42,11 @@ class CameraHandler:
         if self.active:
             # Read a frame from the camera
             ret, image = self.cam.read()
-            # Convert the frame to RGB
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            try:
+                # Convert the frame to RGB
+                conv_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            except cv2.error:
+                conv_image = image
             # If there is a problem with the camera
             if not ret:
                 # Set the camera object to not active
@@ -51,13 +54,13 @@ class CameraHandler:
                 # Try to switch to a different camera in the background
                 threading.Thread(target=self._reinitiate_camera).start()
                 # Put a black frame
-                image = self.BLACK_FRAME
+                conv_image = self.BLACK_FRAME
 
         # If the camera object is not active, return a black frame
         else:
-            image = self.BLACK_FRAME
+            conv_image = self.BLACK_FRAME
 
-        return image
+        return conv_image
 
     def _reinitiate_camera(self):
         """

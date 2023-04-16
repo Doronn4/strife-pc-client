@@ -1994,7 +1994,7 @@ class CallDialog(wx.PopupTransientWindow):
         # Create a sound object
         self.call_sound = wx.adv.Sound("sounds/strife_ring.wav")
         # Play the sound
-        self.call_sound.Play(wx.adv.SOUND_LOOP)
+        self.call_sound.Play(wx.adv.SOUND_ASYNC)
 
     def on_join(self, event):
         """

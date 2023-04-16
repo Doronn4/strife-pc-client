@@ -17,7 +17,7 @@ class VoiceCall:
     CHANNELS = 1
     RATE = 44100
     CHUNK = 4096
-    CALL_TIMEOUT = 1  # The amount of seconds to wait for a response from a call member
+    CALL_TIMEOUT = 3  # The amount of seconds to wait for a response from a call member
 
     def __init__(self, parent, chat_id, key):
         """
@@ -113,6 +113,7 @@ class VoiceCall:
             if ip not in self.call_members.keys():
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
+                    print('added user', ip, self.parent.get_user_by_ip(ip))
                 else:
                     continue
 
