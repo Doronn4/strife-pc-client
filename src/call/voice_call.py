@@ -168,7 +168,8 @@ class VoiceCall:
         Terminates the call
         """
         self.active = False
-        self.audio_input.close()
+        if self.audio_input:
+            self.audio_input.close()
         for user in self.call_members.values():
             if user.audio_output:
                 user.audio_output.close()
