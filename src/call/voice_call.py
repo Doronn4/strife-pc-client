@@ -95,7 +95,7 @@ class VoiceCall:
                 try:
                     data = self.audio_input.read(self.CHUNK)
                 except Exception:
-                    data = b'\x00' * self.CHUNK * 2
+                    self._init_mic()
             else:
                 # If the mic is muted, send silence
                 data = b'\x00' * self.CHUNK * 2

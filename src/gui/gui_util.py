@@ -1088,11 +1088,13 @@ class CallWindow(wx.Frame):
         :param event: The event.
         :type event: wx.Event
         """
-        self.voice_call.toggle_mute()
-        # Change the mute button's bitmap
-        bit = (self.MUTED_BUTTON_IMAGE if self.voice_call.muted else self.MUTE_BUTTON_IMAGE)\
-            .Scale(self.mute_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
-        self.mute_button.SetBitmap(bit)
+        if self.voice_call:
+            if event:
+                self.voice_call.toggle_mute()
+            # Change the mute button's bitmap
+            bit = (self.MUTED_BUTTON_IMAGE if self.voice_call.muted else self.MUTE_BUTTON_IMAGE)\
+                .Scale(self.mute_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
+            self.mute_button.SetBitmap(bit)
 
     def onHangup(self, event):
         """
@@ -1124,7 +1126,8 @@ class CallWindow(wx.Frame):
         :type event: wx.Event
         """
         if self.is_video:
-            self.video_call.toggle_video()
+            if event:
+                self.video_call.toggle_video()
             # Change the camera button's bitmap
             bit = (self.CAMERA_ON_IMAGE if self.video_call.transmit_video else self.CAMERA_OFF_IMAGE)\
                 .Scale(self.camera_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
