@@ -153,9 +153,9 @@ class VoiceCall:
         if ip in self.call_members.keys():
             del self.call_members[ip]
             # Create a sound object
-            join_sound = wx.adv.Sound("sounds/call_leave.wav")
+            leave_sound = wx.adv.Sound("sounds/call_leave.wav")
             # Play the sound
-            join_sound.Play(wx.adv.SOUND_ASYNC)
+            leave_sound.Play(wx.adv.SOUND_ASYNC)
 
     def toggle_mute(self):
         """
