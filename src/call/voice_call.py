@@ -43,14 +43,22 @@ class VoiceCall:
 
         # Audio object
         self.audio = pyaudio.PyAudio()
-        # The audio input objects
-        self.audio_input = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
-                                           input=True, frames_per_buffer=self.CHUNK)
+
+        self.audio_input = None
         
         self.aes = AESCipher()
         self.key = key
 
         self._start()
+
+    def _init_mic(self):
+        # The audio input objects
+        try:
+            self.audio_input = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
+                                               input=True, frames_per_buffer=self.CHUNK)
+        except Exception:
+            self.toggle_mute()
+            self.parent.onMuteToggle(None)
 
     def _start(self):
         """
@@ -150,7 +158,10 @@ class VoiceCall:
         """
         Toggles the mic mute
         """
-        self.muted = not self.muted
+        if self.audio_input or self.muted:
+            self.muted = not self.muted
+        else:
+            self._init_mic()
 
     def terminate(self):
         """
