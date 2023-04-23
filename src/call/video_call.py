@@ -85,7 +85,10 @@ class VideoCall:
                 ips = list(self.ips_users.keys())
                 # Send the image to all the users in the call
                 for ip in ips:
-                    self.socket.sendto(data, (ip, self.PORT))
+                    try:
+                        self.socket.sendto(data, (ip, self.PORT))
+                    except Exception:
+                        break
                 # Sleep 1/FPS of a second to send only the desired frame rate
                 time.sleep((1/self.FPS))
 
