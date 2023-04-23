@@ -300,7 +300,6 @@ class LoginPanel(wx.Panel):
         :return: -
         """
         # Load the chats keys with the password
-        print(f'keys: {keys}, chat_ids: {chat_ids}')
         KeysManager.load_keys(keys, chat_ids, self.password_input.GetValue())
 
     def onLoginAnswer(self, is_valid):

@@ -1,5 +1,6 @@
 import hashlib
 import os
+import random
 import threading
 import pyaudio
 import time
@@ -21,6 +22,7 @@ import wx.adv
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
 TEXT_COLOR = wx.Colour(237, 99, 99)
 MAX_PARTICIPANTS = 6
+MAX_FILE_SIZE = 16  # MB
 
 
 class User:
@@ -1340,6 +1342,11 @@ class ChatTools(wx.Panel):
         if dialog.ShowModal() == wx.ID_OK:
             # Get the path of the chosen file
             file_path = dialog.GetPath()
+            # Check the file size
+            if os.path.getsize(file_path) > MAX_FILE_SIZE * 1024 * 1024:
+                # Show an error message
+                wx.MessageBox("File is too large! max file size is " + str(MAX_FILE_SIZE) + "MB", "Error", wx.OK | wx.ICON_ERROR)
+                return
             # Load the contents of the file
             file_contents = FileHandler.load_file(file_path)
             # Encode the file contents in base64 format
@@ -1996,6 +2003,10 @@ class CallDialog(wx.PopupTransientWindow):
 
         # Create a sound object
         self.call_sound = wx.adv.Sound("sounds/strife_ring.wav")
+
+        if random.randint(1, 1000) == 69:
+            self.call_sound = wx.adv.Sound("sounds/u.wav")
+
         # Play the sound
         self.call_sound.Play(wx.adv.SOUND_ASYNC)
 
