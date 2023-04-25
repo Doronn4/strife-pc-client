@@ -170,6 +170,7 @@ class MainPanel(wx.Panel):
         MainPanel.my_friends = []
         self.friends_panel.reset_friends()
         self.groups_panel.sizer.reset_groups()
+        print('Updating chats list...', ', '.join([str(chat[1]) for chat in chats]))
 
         for chat_id, chat_name in chats:
             if chat_name.startswith('PRIVATE') and len(chat_name.split('%%')) == 3:
@@ -217,6 +218,7 @@ class MainPanel(wx.Panel):
         Load the user's friends list
         :return: None
         """
+        print('Loading friends...')
         # Request the list of chats
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
@@ -264,6 +266,7 @@ class MainPanel(wx.Panel):
         :param chat_id: The chat's id
         :return: None
         """
+        print('on friend added')
         # Request chats list from the server
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)

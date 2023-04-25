@@ -26,7 +26,7 @@ class VoiceCall:
         :param key: The symmetrical key of the call
         """
         # The voice port
-        self.PORT = 4000
+        self.PORT = 2706
         # The call's chat id
         self.chat_id = chat_id
         # A queue for the incoming messages from the server

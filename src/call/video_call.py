@@ -24,7 +24,7 @@ class VideoCall:
         # The amount of FPS
         self.FPS = 30
         # The video port
-        self.PORT = 5000
+        self.PORT = 2903
         # The size of the video chunk
         self.BUFFER_SIZE = 1024 * 64
         # The camera handler object
