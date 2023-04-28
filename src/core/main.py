@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 import signal
 import threading
@@ -7,9 +8,9 @@ import wx
 from pubsub import pub
 import base64
 import sys
-# Import wx inspection tool
-import wx.lib.inspection
-
+import socket
+import subprocess
+import ipaddress
 
 # Add the project folder to PYTHONPATH
 project_dir = str(Path(os.path.abspath(__file__)).parent.parent.parent)
@@ -399,18 +400,86 @@ def handle_files_messages(com, q):
             files_dict[message['opname']](message)
 
 
+def detect_server_locally(server_port: int):
+    """
+    Find the IP address of the server in the local network using the server port
+    :param server_port: The port of the server
+    :return: The IP address of the server
+    """
+    # Get the local network IP address and subnet mask
+    output = subprocess.check_output(['ipconfig'], universal_newlines=True)
+    # Get the IP address and subnet mask by using regex on the output of the ipconfig command
+    ip_address = re.search(r'IPv4 Address\. . . . . . . . . . . : ([\d\.]+)', output).group(1)
+    subnet_mask = re.search(r'Subnet Mask . . . . . . . . . . . : ([\d\.]+)', output).group(1)
+    # Create an IPv4 network object from the IP address and subnet mask
+    network_address = ipaddress.IPv4Network(f"{ip_address}/{subnet_mask}", strict=False)
+
+    # Create a list to store the results of the connection attempts
+    results = []
+
+    # Create a list of threads to perform the connection attempts
+    threads = []
+    for device_ip in network_address.hosts():
+        t = threading.Thread(target=connect_to_server, args=(str(device_ip), server_port, results))
+        threads.append(t)
+        t.start()
+
+    # Add a thread to connect to the current device's IP address
+    t = threading.Thread(target=connect_to_server, args=(ip_address, server_port, results))
+    threads.append(t)
+    t.start()
+
+    # Wait for all threads to finish
+    for t in threads:
+        t.join()
+
+    # Check the results for a successful connection
+    for result in results:
+        if result is not None:
+            return result
+
+    # No server was found, so return None
+    return None
+
+
+def connect_to_server(ip_address: str, port: int, results: list):
+    """
+    Attempt to connect to the server at the specified IP address and port
+    :param ip_address: The IP address to connect to
+    :param port: The port to connect to
+    :param results: The list to append the results to
+    :return: None
+    """
+    try:
+        # Create a socket and attempt to connect to the server
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(3)
+            s.connect((ip_address, port))
+            # Connection succeeded, so append the device IP address to the results list
+            results.append(ip_address)
+
+    except (socket.timeout, ConnectionRefusedError):
+        # Connection failed or timed out, so append None to the results list
+        results.append(None)
+
+
 def main():
+    server_ip = detect_server_locally(3108)
+    if server_ip is None:
+        print("Strife server not detected in the local network. using the default IP address in the config file.")
+        server_ip = config.server_ip
+
     # Create the communication objects, the queues and start the threads
     general_queue = queue.Queue()
-    general_com = ClientCom(3108, config.server_ip, general_queue)
+    general_com = ClientCom(3108, server_ip, general_queue)
     threading.Thread(target=handle_general_messages, args=(general_com, general_queue,), daemon=True).start()
 
     chats_queue = queue.Queue()
-    chats_com = ClientCom(2907, config.server_ip, chats_queue, com_type='chats')
+    chats_com = ClientCom(2907, server_ip, chats_queue, com_type='chats')
     threading.Thread(target=handle_chats_messages, args=(chats_com, chats_queue,), daemon=True).start()
 
     files_queue = queue.Queue()
-    files_com = ClientCom(3103, config.server_ip, files_queue, com_type='files')
+    files_com = ClientCom(3103, server_ip, files_queue, com_type='files')
     threading.Thread(target=handle_files_messages, args=(files_com, files_queue,), daemon=True).start()
 
     # Wait for the connection to the server
@@ -429,7 +498,6 @@ def main():
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,
                            chats_com=chats_com, files_com=files_com)
     main_frame.Show()
-    wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
     # When the GUI is closed, close the threads

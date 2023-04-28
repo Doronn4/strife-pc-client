@@ -90,20 +90,24 @@ class ClientCom:
             self.socket.connect((self.server_ip, self.server_port))
 
         except Exception:
-            # If the server is not responding, send a message to the main frame
-            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
-            self.close()
-            return
+            # Check if there is a wx app running
+            if wx.GetApp():
+                # If the server is not responding, send a message to the main frame
+                wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+                self.close()
+                return
 
         # Change keys with server
         try:
             self.switch_keys()  # Switch encryption keys with server
 
         except Exception as e:
-            # If the server is not responding, send a message to the main frame
-            wx.CallAfter(pub.sendMessage, 'server_connection_lost')
-            self.close()
-            return
+            # Check if there is a wx app running
+            if wx.GetApp():
+                # If the server is not responding, send a message to the main frame
+                wx.CallAfter(pub.sendMessage, 'server_connection_lost')
+                self.close()
+                return
 
         self.running = True
 

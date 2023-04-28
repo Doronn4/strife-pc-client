@@ -96,6 +96,7 @@ class VoiceCall:
                     data = self.audio_input.read(self.CHUNK)
                 except Exception:
                     self._init_mic()
+                    continue
             else:
                 # If the mic is muted, send silence
                 data = b'\x00' * self.CHUNK * 2
@@ -105,6 +106,7 @@ class VoiceCall:
             # The ips to send to
             ips = list(self.call_members.keys())
             # send the data to the ips
+            print(len(data))
             for ip in ips:
                 self.socket.sendto(data, (ip, self.PORT))
 
