@@ -1105,7 +1105,7 @@ class CallWindow(wx.Frame):
         :type event: wx.Event
         """
         self.voice_call.terminate()
-        if self.is_video:
+        if self.is_video and self.video_call:
             self.video_call.terminate()
 
         # Unsubscribe from the events

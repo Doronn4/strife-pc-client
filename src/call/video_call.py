@@ -77,10 +77,14 @@ class VideoCall:
                 # Update the current user's video frame
                 gui_util.User.this_user.update_video(frame)
 
+                # Convert the frame from BGR to RGB
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
                 # Compress the frame to jpg format
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
                 data = self.aes.encrypt_bytes(self.key, buffer.tobytes())
+                print(len(data), 'dwdwdw')
                 # The ips to send to
                 ips = list(self.ips_users.keys())
                 # Send the image to all the users in the call
@@ -109,6 +113,9 @@ class VideoCall:
             # Convert the buffer received to an image
             buffer = numpy.frombuffer(data, numpy.uint8)
             frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
+
+            # Convert the frame from BGR to RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             # Get the ip of the sender
             ip = addr[0]
@@ -161,5 +168,6 @@ class VideoCall:
         Terminates the video call
         """
         self.active = False
-        self.camera.close()
+        if self.camera:
+            self.camera.close()
         self.socket.close()
