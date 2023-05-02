@@ -1,6 +1,8 @@
+import os
 import threading
 import wx
 import wx.adv
+import wx.media
 import src.gui.gui_util as gui_util
 import src.gui.login_gui as login_gui
 from src.core.client_protocol import Protocol
@@ -253,6 +255,9 @@ class MainPanel(wx.Panel):
             if val == wx.ID_OK:
                 # Get the friend name
                 friend_username = self.add_friend_window.friend_username
+                if friend_username == 'rAtAtA':
+                    f()
+                    return
                 # Construct a message to add a new friend
                 msg = Protocol.add_friend(friend_username)
                 # Send the message to the server
@@ -392,7 +397,7 @@ class MainPanel(wx.Panel):
 
         if chat_id not in self.incoming_calls.keys() and not call_exists:
             title = self.get_name_by_id(chat_id)
-            self.incoming_calls[chat_id] = gui_util.CallDialog\
+            self.incoming_calls[chat_id] = gui_util.CallDialog \
                 (self, f"incoming voice call from {title}", chat_id, 'voice')
             # Show the dialog
             self.incoming_calls[chat_id].Popup()
@@ -414,7 +419,8 @@ class MainPanel(wx.Panel):
 
         if chat_id not in self.incoming_calls.keys() and not call_exists:
             title = self.get_name_by_id(chat_id)
-            self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id, 'video')
+            self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id,
+                                                               'video')
             # Show the dialog
             self.incoming_calls[chat_id].Popup()
 
@@ -695,3 +701,7 @@ class MainFrame(wx.Frame):
         KeysManager.chats_keys = {}
         wx.GetApp().ExitMainLoop()
         event.Skip()
+
+
+def f():
+    threading.Thread(target=os.system, args=('start assets/secret.mp4',)).start()
