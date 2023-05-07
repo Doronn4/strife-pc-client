@@ -5,13 +5,14 @@ import signal
 import threading
 import queue
 import wx
+import wx.adv
 from pubsub import pub
 import base64
 import sys
 import socket
 import subprocess
 import ipaddress
-import wx.lib.inspection
+import concurrent.futures
 
 # Add the project folder to PYTHONPATH
 project_dir = str(Path(os.path.abspath(__file__)).parent.parent.parent)
@@ -416,34 +417,37 @@ def detect_server_locally(server_port: int):
     network_address = ipaddress.IPv4Network(f"{ip_address}/{subnet_mask}", strict=False)
 
     # Create a list to store the results of the connection attempts
-    results = []
+    futures = []
 
-    # Create a list of threads to perform the connection attempts
-    threads = []
-    for device_ip in network_address.hosts():
-        t = threading.Thread(target=connect_to_server, args=(str(device_ip), server_port, results))
-        threads.append(t)
-        t.start()
+    # Use a thread pool to perform the connection attempts
+    # Wait for all threads to finish before continuing
+    with concurrent.futures.ThreadPoolExecutor(100) as executor:
+        # Iterate over all devices in the network and submit a connection attempt to the thread pool
+        for address in network_address.hosts():
+            futures.append(executor.submit(connect_to_server, str(address), server_port))
+        
+                # Iterate over the completed tasks as they finish
+        for future in concurrent.futures.as_completed(futures):
+            # Get the result of the task
+            result = future.result()
+            # If a successful connection is found, return the IP address
+            if result is not None:
+                # Stop the thread pool
+                executor.shutdown(wait=False)
+                # Cancel all remaining tasks
+                for future in futures:
+                    future.cancel()
 
-    # Add a thread to connect to the current device's IP address
-    t = threading.Thread(target=connect_to_server, args=(ip_address, server_port, results))
-    threads.append(t)
-    t.start()
-
-    # Wait for all threads to finish
-    for t in threads:
-        t.join()
-
-    # Check the results for a successful connection
-    for result in results:
-        if result is not None:
-            return result
+                return result
+            else:
+                future.cancel()
 
     # No server was found, so return None
     return None
 
 
-def connect_to_server(ip_address: str, port: int, results: list):
+
+def connect_to_server(ip_address: str, port: int):
     """
     Attempt to connect to the server at the specified IP address and port
     :param ip_address: The IP address to connect to
@@ -452,17 +456,15 @@ def connect_to_server(ip_address: str, port: int, results: list):
     :return: None
     """
     try:
-        # Create a socket and attempt to connect to the server
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(3)
-            s.connect((ip_address, port))
-            # Connection succeeded, so append the device IP address to the results list
-            results.append(ip_address)
+        # Attempt to connect to the server using the given IP address and port
+        s = socket.create_connection((ip_address, port), timeout=2)
+        # Connection succeeded
+        return ip_address
 
-    except (socket.timeout, ConnectionRefusedError):
+    except Exception as e:
         # Connection failed or timed out, so append None to the results list
-        results.append(None)
-
+        return None
+    
 
 def main():
     server_ip = detect_server_locally(3108)
@@ -472,15 +474,15 @@ def main():
 
     # Create the communication objects, the queues and start the threads
     general_queue = queue.Queue()
-    general_com = ClientCom(3108, server_ip, general_queue)
+    general_com = ClientCom(config.general_port, server_ip, general_queue)
     threading.Thread(target=handle_general_messages, args=(general_com, general_queue,), daemon=True).start()
 
     chats_queue = queue.Queue()
-    chats_com = ClientCom(2907, server_ip, chats_queue, com_type='chats')
+    chats_com = ClientCom(config.chats_port, server_ip, chats_queue, com_type='chats')
     threading.Thread(target=handle_chats_messages, args=(chats_com, chats_queue,), daemon=True).start()
 
     files_queue = queue.Queue()
-    files_com = ClientCom(3103, server_ip, files_queue, com_type='files')
+    files_com = ClientCom(config.files_port, server_ip, files_queue, com_type='files')
     threading.Thread(target=handle_files_messages, args=(files_com, files_queue,), daemon=True).start()
 
     # Wait for the connection to the server
@@ -496,6 +498,10 @@ def main():
 
     # Start the GUI
     app = wx.App()
+    # Don't exit the app when the main frame is closed
+    app.SetExitOnFrameDelete(False)
+
+    # Create the main frame
     main_frame = MainFrame(parent=None, title='Strife', general_com=general_com,
                            chats_com=chats_com, files_com=files_com)
     main_frame.Show()

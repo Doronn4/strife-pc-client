@@ -6,6 +6,7 @@ import wx
 import wx.adv
 import pyaudio
 from src.core.cryptions import AESCipher
+import config
 
 
 class VoiceCall:
@@ -26,7 +27,7 @@ class VoiceCall:
         :param key: The symmetrical key of the call
         """
         # The voice port
-        self.PORT = 2706
+        self.port = config.voice_port
         # The call's chat id
         self.chat_id = chat_id
         # A queue for the incoming messages from the server
@@ -69,7 +70,7 @@ class VoiceCall:
         """
         # Creates a UDP socket
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.socket.bind(('0.0.0.0', self.PORT))
+        self.socket.bind(('0.0.0.0', self.port))
 
         threading.Thread(target=self.receive_audio).start()
         threading.Thread(target=self.send_audio).start()
@@ -106,9 +107,8 @@ class VoiceCall:
             # The ips to send to
             ips = list(self.call_members.keys())
             # send the data to the ips
-            print(len(data))
             for ip in ips:
-                self.socket.sendto(data, (ip, self.PORT))
+                self.socket.sendto(data, (ip, self.port))
 
     def receive_audio(self):
         """
@@ -129,7 +129,6 @@ class VoiceCall:
             if ip not in self.call_members.keys():
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
-                    print('added user', ip, self.parent.get_user_by_ip(ip))
                 else:
                     continue
 

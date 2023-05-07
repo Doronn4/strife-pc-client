@@ -1,3 +1,4 @@
+import asyncio
 import os
 import threading
 import wx
@@ -11,12 +12,27 @@ import wx.lib.mixins.inspection
 from src.handlers.file_handler import FileHandler
 from src.core.keys_manager import KeysManager
 
+# Create a new event loop
+loop = asyncio.new_event_loop()
+
+# Set the event loop as the default event loop
+asyncio.set_event_loop(loop)
+
+
+# Start the event loop in a separate thread
+def start_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+
+threading.Thread(target=start_loop, args=(loop,)).start()
+
 
 class MainPanel(wx.Panel):
     """
     The main panel of the app
     """
-    known_users = []
+    known_users = {}
     my_friends = []
 
     def __init__(self, parent):
@@ -138,6 +154,16 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onVideoStart, 'video_started')
         self.load_friends()
 
+    def request_user_pfp(self, username):
+        pfp_hash = FileHandler.get_pfp_hash(username)
+        if pfp_hash:
+            msg = Protocol.request_user_pfp_check(username, pfp_hash)
+        else:
+            msg = Protocol.request_user_pfp(username)
+
+        # Send the message to the server
+        self.parent.general_com.send_data(msg)
+
     def onUserPic(self, contents, username):
         """
         Update the user's picture
@@ -146,11 +172,12 @@ class MainPanel(wx.Panel):
         :return: None
         """
         if username == gui_util.User.this_user.username:
-            path = FileHandler.save_pfp(contents, username)
-            gui_util.User.this_user.update_pic()
+            FileHandler.save_pfp(contents, username)
+            asyncio.run_coroutine_threadsafe(update_pic_async(gui_util.User.this_user), loop=asyncio.get_event_loop())
         else:
-            path = FileHandler.save_pfp(contents, username)
-            MainPanel.get_user_by_name(username).update_pic()
+            FileHandler.save_pfp(contents, username)
+            user = MainPanel.get_user_by_name(username)
+            asyncio.run_coroutine_threadsafe(update_pic_async(user), loop=asyncio.get_event_loop())
 
     def onUserStatus(self, username, status):
         """
@@ -172,7 +199,8 @@ class MainPanel(wx.Panel):
         MainPanel.my_friends = []
         self.friends_panel.reset_friends()
         self.groups_panel.sizer.reset_groups()
-        print('Updating chats list...', ', '.join([str(chat[1]) for chat in chats]))
+
+        add_to_friends_panel = []
 
         for chat_id, chat_name in chats:
             if chat_name.startswith('PRIVATE') and len(chat_name.split('%%')) == 3:
@@ -186,15 +214,13 @@ class MainPanel(wx.Panel):
 
                 # Add the user to the list of friends
                 MainPanel.my_friends.append(user)
-                # Add the friend user to the friends panel
-                self.friends_panel.add_user(user)
+
+                # # Add the friend user to the friends panel
                 # Create a group to represent the chat with the friend
                 self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user, user])
+                add_to_friends_panel.append(user)
 
-                # Construct a message to request the user's profile pic
-                msg = Protocol.request_user_pfp(other_username)
-                # Send the message to the server
-                self.parent.general_com.send_data(msg)
+                self.request_user_pfp(other_username)
                 # Construct a message to request the user's status
                 msg = Protocol.request_user_status(other_username)
                 # Send the message to the server
@@ -203,10 +229,11 @@ class MainPanel(wx.Panel):
                 # If it's a group chat
                 # Create a user object for the group
                 group_user = gui_util.User(username=chat_name, chat_id=chat_id)
+
                 # Add the group's user object to the friends panel
-                self.friends_panel.add_user(group_user)
                 # Create a new group in the groups panel and add the current user to it
                 self.groups_panel.sizer.add_group(chat_id, [gui_util.User.this_user])
+                add_to_friends_panel.append(group_user)
                 # Send a message to the server requesting a list of the group's members
                 msg = Protocol.request_group_members(chat_id)
                 self.parent.general_com.send_data(msg)
@@ -215,19 +242,19 @@ class MainPanel(wx.Panel):
             msg = Protocol.get_chat_history(chat_id)
             self.parent.general_com.send_data(msg)
 
+        # Add the users to the friends panel
+        self.friends_panel.add_users(add_to_friends_panel)
+
     def load_friends(self):
         """
         Load the user's friends list
         :return: None
         """
-        print('Loading friends...')
         # Request the list of chats
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
 
-        # Request the current user's profile pic
-        msg = Protocol.request_user_pfp(gui_util.User.this_user.username)
-        self.parent.general_com.send_data(msg)
+        self.request_user_pfp(gui_util.User.this_user.username)
 
     def onAddFriendAnswer(self, is_valid):
         """
@@ -271,13 +298,11 @@ class MainPanel(wx.Panel):
         :param chat_id: The chat's id
         :return: None
         """
-        print('on friend added')
         # Request chats list from the server
         msg = Protocol.request_chats()
         self.parent.general_com.send_data(msg)
 
-        msg = Protocol.request_user_pfp(friend_username)
-        self.parent.general_com.send_data(msg)
+        self.request_user_pfp(friend_username)
 
         msg = Protocol.request_user_status(friend_username)
         self.parent.general_com.send_data(msg)
@@ -303,9 +328,7 @@ class MainPanel(wx.Panel):
                                                       self, wx.ICON_INFORMATION)
             notification.Show()
 
-        # Request the user's profile pic
-        msg = Protocol.request_user_pfp(adder_username)
-        self.parent.general_com.send_data(msg)
+        self.request_user_pfp(adder_username)
 
     def onChatSelect(self, chat_id: int):
         """
@@ -564,7 +587,7 @@ class MainPanel(wx.Panel):
             dialog.Dismiss()
 
         self.incoming_calls = {}
-        MainPanel.known_users = []
+        MainPanel.known_users = {}
         MainPanel.my_friends = []
         self.friends_panel.reset_friends()
         self.groups_panel.sizer.reset_groups()
@@ -584,24 +607,17 @@ class MainPanel(wx.Panel):
         :return: The user object
         :rtype: gui_util.User
         """
-        user_found = None
+        # Check if the user is already in the known users dictionary
+        try:
+            return MainPanel.known_users[username]
+        except KeyError:
+            pass
 
-        # If the user is the current user, return the current user
-        if username == gui_util.User.this_user.username:
-            return gui_util.User.this_user
+        # If the user is not in the dictionary, create a new user object
+        user = gui_util.User(username=username)
+        MainPanel.known_users[username] = user
+        return user
 
-        # Search for the user in the known users list
-        for user in MainPanel.known_users:
-            if user.username == username:
-                user_found = user
-                break
-
-        # If the user was not found, create a new user object
-        if not user_found:
-            user_found = gui_util.User(username=username)
-            MainPanel.known_users.append(user_found)
-
-        return user_found
 
     def get_name_by_id(self, id):
         """
@@ -611,15 +627,10 @@ class MainPanel(wx.Panel):
         :return: The user's name
         :rtype: str
         """
-        name = ''
-        # Get all the users in the friends panel (including groups)
-        all_users = [userbox.user for userbox in self.friends_panel.users]
-        for user in all_users:
-            if user.chat_id == id:
-                name = user.username
-                break
-
-        return name
+        for userbox in self.friends_panel.users:
+            if userbox.user.chat_id == id:
+                return userbox.user.username
+        return ''
 
 
 class MainFrame(wx.Frame):
@@ -661,7 +672,33 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.onClose)
 
+        # Add the app icon to the system tray
+        icon = wx.Icon('assets\\strife_logo.ico', wx.BITMAP_TYPE_ICO)
+        self.taskbar_icon = wx.adv.TaskBarIcon()
+        self.taskbar_icon.SetIcon(icon, 'Strife')
+        # Set the taskbar icon to open the GUI when left-clicked
+        self.taskbar_icon.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, lambda event: self.Show())
+        # Bind the taskbar icon to a function on right-click
+        self.taskbar_icon.Bind(wx.adv.EVT_TASKBAR_RIGHT_DOWN, self.onTrayIconRightClick)
+
         pub.subscribe(self.onConnectionLost, 'server_connection_lost')
+        pub.subscribe(self.onConnection, 'server_connection_established')
+
+    def onTrayIconRightClick(self, event):
+        """
+        Called when the taskbar icon is right-clicked
+        :param event: The event
+        :return: -
+        """
+        # Create a menu with options to show the window, exit the program.
+        menu = wx.Menu()
+        menu.Append(1, "Open Strife")
+        menu.Append(2, "Exit")
+        # Bind the menu options to functions
+        menu.Bind(wx.EVT_MENU, lambda e: self.Show(), id=1)
+        menu.Bind(wx.EVT_MENU, lambda e: self.close_app(), id=2)
+        # Show the menu
+        self.taskbar_icon.PopupMenu(menu)
 
     def onConnectionLost(self):
         """
@@ -669,7 +706,15 @@ class MainFrame(wx.Frame):
         :return: None
         """
         wx.MessageBox('Connection to the server was lost', 'Connection lost', wx.OK | wx.ICON_ERROR)
-        self.Close()
+        self.close_app()
+
+    def onConnection(self):
+        """
+        Called when the connection to the server is established
+        :return: None
+        """
+        if self.general_com.running and self.chats_com.running and self.files_com.running:
+            self.Enable()
 
     def move_to_main(self):
         """
@@ -686,6 +731,7 @@ class MainFrame(wx.Frame):
         self.register_panel.password_input.SetValue('')
         self.register_panel.username_input.SetValue('')
         self.panel_switcher.Show(self.login_panel)
+        self.Disable()
 
     def onClose(self, event):
         """
@@ -694,13 +740,35 @@ class MainFrame(wx.Frame):
         :type event: wx.Event
         :return: -
         """
+        self.taskbar_icon.ShowBalloon('Strife', 'Strife is still running in the background', 1)
+        self.Hide()
+        event.Veto()
+
+    def close_app(self):
+        """
+        Closes the application
+        :return: -
+        """
+        # Close the communication objects
         self.general_com.close()
         self.chats_com.close()
         self.files_com.close()
+        # Close the taskbar icon
+        self.taskbar_icon.Destroy()
+        # Delete the keys
         KeysManager.last_password = None
         KeysManager.chats_keys = {}
         wx.GetApp().ExitMainLoop()
-        event.Skip()
+
+
+async def update_pic_async(user):
+    """
+    Updates the user's profile picture
+    :param user: The user
+    :type user: User
+    :return: -
+    """
+    await user.update_pic()
 
 
 def f():

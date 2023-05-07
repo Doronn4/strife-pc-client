@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 
 
@@ -68,9 +69,26 @@ class FileHandler:
         :return: The contents of the loaded profile picture.
         :rtype: bytes
         """
+        if not os.path.exists(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png'):
+            return None
         with open(f'{FileHandler.base_path}{FileHandler.PFPS_PATH}\\{username}.png', 'rb') as f:
             picture = f.read()
         return picture
+
+    @staticmethod
+    def get_pfp_hash(username: str):
+        """
+        This method gets the hash of a user's profile picture.
+
+        :param username: The username of the user whose profile picture's hash is being retrieved.
+        :type username: str
+        :return: The hash of the user's profile picture, or None if it doesn't exist.
+        :rtype: str or None
+        """
+        picture = FileHandler.load_pfp(username)
+        if picture:
+            return hashlib.sha256(picture).hexdigest()
+        return None
 
     @staticmethod
     def get_pfp_path(username: str):

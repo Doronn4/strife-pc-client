@@ -3,6 +3,7 @@ import threading
 import time
 import cv2
 import numpy
+import config
 from src.core.cryptions import AESCipher
 from src.handlers.camera_handler import CameraHandler
 import src.gui.gui_util as gui_util
@@ -20,11 +21,11 @@ class VideoCall:
         :param key: The symmetrical key of the call
         """
         # The quality of the video frame
-        self.QUALITY = 60
+        self.QUALITY = 50
         # The amount of FPS
         self.FPS = 30
         # The video port
-        self.PORT = 2903
+        self.port = config.video_port
         # The size of the video chunk
         self.BUFFER_SIZE = 1024 * 64
         # The camera handler object
@@ -84,13 +85,12 @@ class VideoCall:
                 ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.QUALITY])
                 # Encrypt the data using the call's symmetrical key
                 data = self.aes.encrypt_bytes(self.key, buffer.tobytes())
-                print(len(data), 'dwdwdw')
                 # The ips to send to
                 ips = list(self.ips_users.keys())
                 # Send the image to all the users in the call
                 for ip in ips:
                     try:
-                        self.socket.sendto(data, (ip, self.PORT))
+                        self.socket.sendto(data, (ip, self.port))
                     except Exception:
                         break
                 # Sleep 1/FPS of a second to send only the desired frame rate
@@ -119,10 +119,13 @@ class VideoCall:
 
             # Get the ip of the sender
             ip = addr[0]
-            
+
+            # If the user is not in the call, add him
             if ip not in self.ips_users.keys():
+                # If the user is in the call members, add him
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
+                # If the user is not in the call members, don't add him
                 else:
                     continue
 
@@ -158,7 +161,7 @@ class VideoCall:
         """
         self.active = True
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.socket.bind(('0.0.0.0', self.PORT))
+        self.socket.bind(('0.0.0.0', self.port))
 
         threading.Thread(target=self.receive_videos).start()
         threading.Thread(target=self.send_video).start()

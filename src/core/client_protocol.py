@@ -32,7 +32,8 @@ class Protocol:
         'accept_friend': 20,
         'request_friend_list': 21,
         'logout': 22,
-        'request_keys': 23
+        'request_keys': 23,
+        'request_user_picture_check': 24,
     }
     chat_opcodes = {
         'text_message': 1,
@@ -381,6 +382,15 @@ class Protocol:
         opcode = Protocol.general_opcodes['request_user_picture']
         # Construct the message
         msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}"
+        # Return the message after protocol
+        return msg
+
+    @staticmethod
+    def request_user_pfp_check(username, pfp_hash):
+        # Get the opcode of request_user_pfp
+        opcode = Protocol.general_opcodes['request_user_picture_check']
+        # Construct the message
+        msg = f"{str(opcode).zfill(2)}{Protocol.FIELD_SEPARATOR}{username}{Protocol.FIELD_SEPARATOR}{pfp_hash}"
         # Return the message after protocol
         return msg
 

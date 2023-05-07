@@ -41,7 +41,7 @@ class ClientCom:
         self.running = False
 
         # Start the main thread
-        self.main_thread = threading.Thread(target=self._main_loop)
+        self.main_thread = threading.Thread(target=self._main_loop, name=f'client_com_{com_type}_thread')
         self.main_thread.start()
 
     def send_data(self, data):
@@ -110,6 +110,10 @@ class ClientCom:
                 return
 
         self.running = True
+        # Check if there is a wx app running
+        if wx.GetApp():
+            # Send a message to the main frame that the connection was established
+            wx.CallAfter(pub.sendMessage, 'server_connection_established')
 
         # Run while the client_com object is running
         while self.running:

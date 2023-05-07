@@ -34,7 +34,7 @@ class User:
     this_user = None
     audio = pyaudio.PyAudio()
 
-    def __init__(self, username='NoUser', status='', chat_id=-1):
+    def __init__(self, username='', status='', chat_id=-1):
         """
         This is the constructor for the User class.
 
@@ -80,6 +80,7 @@ class User:
         """
         # Get the path to the user's profile picture.
         path = FileHandler.get_pfp_path(self.username)
+
         # If a path is found, set the user's profile picture to the image at that path.
         if path:
             self.pic = wx.Image(path, wx.BITMAP_TYPE_ANY)
@@ -440,6 +441,27 @@ class UsersScrollPanel(ScrolledPanel):
             self.sizer.Add(user_box, 0, wx.EXPAND)  # adds the UserBox object to the sizer
         else:
             self.sizer.Add(user_box, 0, wx.EXPAND)
+
+        self.Refresh()  # updates the panel
+        self.Layout()  # updates the layout of the panel
+        self.SetupScrolling()  # enables scrolling in the panel
+
+    def add_users(self, users: List[User]):
+        """
+        Adds multiple users to the panel.
+        :param users:
+        :type users:
+        :return:
+        :rtype:
+        """
+        user_boxes = []
+        # Create a UserBox object for each user
+        for user in users:
+            user_box = UserBox(self, user, self.align_right, onClick=self.handle_click)
+            user_boxes.append((user_box, 0, wx.EXPAND))
+            self.users.append(user_box)
+        # Add the UserBox objects to the sizer using the AddMany method
+        self.sizer.AddMany(user_boxes)
 
         self.Refresh()  # updates the panel
         self.Layout()  # updates the layout of the panel
@@ -1309,6 +1331,9 @@ class ChatTools(wx.Panel):
         # Set the font on the text control
         self.message_input.SetFont(font)
         self.message_input.SetMaxLength(self.MAX_MESSAGE_LENGTH)
+        # Bind the enter key to the send_message function
+        # But if the shift key is pressed, add a new line instead
+        self.message_input.Bind(wx.EVT_TEXT_ENTER, self.onMessageEnter)
 
         self.send_file_button = wx.Button(self, label='')
         file_image = wx.Image("assets/file.png", wx.BITMAP_TYPE_ANY)
@@ -1381,11 +1406,24 @@ class ChatTools(wx.Panel):
             except Exception as e:
                 pass
             else:
-                print("Sending message: " + raw_message, 'with key: ', chat_key, 'to chat: ', self.chat_id)
                 encrypted_msg = AESCipher.encrypt(chat_key, raw_message)
                 msg = Protocol.send_message(User.this_user.username, self.chat_id, encrypted_msg)
                 self.parent.GetParent().parent.parent.chats_com.send_data(msg)
                 self.message_input.Clear()
+
+    def onMessageEnter(self, event):
+        """
+        Called when the user presses the enter key,
+        checks if the shift key was pressed and acts accordingly.
+        :param event: The event that triggered the function.
+        :return: -
+        """
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            # Shift key was pressed, add a new line
+            self.message_input.AppendText('\n')
+        else:
+            # Enter key was pressed, send the message
+            self.onMessageSend(event)
 
 
 class ChatMessage(wx.Panel):
@@ -1556,8 +1594,8 @@ class GroupsSwitcher(wx.BoxSizer):
             sender_user = main_gui.MainPanel.get_user_by_name(sender)
             try:
                 chat_key = KeysManager.get_chat_key(chat_id)
-            except Exception:
-                print('no chat key for', chat_id)
+            except KeyError:
+                pass
             else:
                 if msg['opname'] == 'text_message':
                     raw_msg = msg['message']
