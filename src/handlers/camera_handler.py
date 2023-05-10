@@ -56,9 +56,10 @@ class CameraHandler:
                 # Put a black frame
                 conv_image = self.BLACK_FRAME
 
-        # If the camera object is not active, return a black frame
+        # If the camera object is not active, return None
         else:
-            conv_image = self.BLACK_FRAME
+            # conv_image = self.BLACK_FRAME
+            conv_image = None
 
         return conv_image
 

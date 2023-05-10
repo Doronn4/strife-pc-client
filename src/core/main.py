@@ -426,7 +426,7 @@ def detect_server_locally(server_port: int):
         for address in network_address.hosts():
             futures.append(executor.submit(connect_to_server, str(address), server_port))
         
-                # Iterate over the completed tasks as they finish
+        # Iterate over the completed tasks as they finish
         for future in concurrent.futures.as_completed(futures):
             # Get the result of the task
             result = future.result()
@@ -444,7 +444,6 @@ def detect_server_locally(server_port: int):
 
     # No server was found, so return None
     return None
-
 
 
 def connect_to_server(ip_address: str, port: int):
