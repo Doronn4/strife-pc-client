@@ -54,6 +54,10 @@ class VoiceCall:
         self._start()
 
     def _init_mic(self):
+        """
+        Initiates the mic
+        :return: -
+        """
         # The audio input objects
         try:
             self.audio_input = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
@@ -78,7 +82,7 @@ class VoiceCall:
 
     def check_users(self):
         """
-        Checks if the users are still in the call
+        Checks if the users are still in the call, and removes the ones that aren't
         """
         while self.active:
             time.sleep(1)

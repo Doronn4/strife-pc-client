@@ -407,6 +407,9 @@ class PanelsSwitcher(wx.BoxSizer):
 
 
 class UsersScrollPanel(ScrolledPanel):
+    """
+    A panel that displays a list of users.
+    """
     def __init__(self, parent, align_right=False, on_click=None):
         """
         Initializes an instance of UsersScrollPanel.
@@ -520,6 +523,9 @@ class UsersScrollPanel(ScrolledPanel):
 
 
 class SettingsDialog(wx.Dialog):
+    """
+    A dialog that displays the settings of the application.
+    """
     def __init__(self, parent):
         super(SettingsDialog, self).__init__(parent, title='Settings', style=wx.CAPTION)
         self.RELATIVE_SIZE = 0.5
@@ -743,6 +749,9 @@ class SettingsDialog(wx.Dialog):
 
 
 class CallUserPanel(wx.Panel):
+    """
+    A panel that displays a user's video feed during a call.
+    """
     def __init__(self, parent, user, fps=30):
         """
         Constructor for the CallUserPanel class.
@@ -854,6 +863,9 @@ class CallUserPanel(wx.Panel):
 
 
 class CallGrid(wx.GridSizer):
+    """
+    A grid that displays the video feeds of all the users in a call.
+    """
     def __init__(self, parent):
         """
         Initializes a CallGrid object.

@@ -125,3 +125,4 @@ class CameraHandler:
         :return: -
         """
         self.cam.release()
+        self.active = False

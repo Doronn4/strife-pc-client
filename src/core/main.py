@@ -185,7 +185,7 @@ def handle_chat_history(message):
         msg = base64.b64decode(msg.encode()).decode()
         msg_params = Protocol.unprotocol_msg('chat', msg)
         messages_params.append(msg_params)
-    
+
     wx.CallAfter(pub.sendMessage, 'chat_history', messages=messages_params, chat_id=message['chat_id'])
 
 
@@ -425,8 +425,8 @@ def detect_server_locally(server_port: int):
         # Iterate over all devices in the network and submit a connection attempt to the thread pool
         for address in network_address.hosts():
             futures.append(executor.submit(connect_to_server, str(address), server_port))
-        
-                # Iterate over the completed tasks as they finish
+
+            # Iterate over the completed tasks as they finish
         for future in concurrent.futures.as_completed(futures):
             # Get the result of the task
             result = future.result()
@@ -446,7 +446,6 @@ def detect_server_locally(server_port: int):
     return None
 
 
-
 def connect_to_server(ip_address: str, port: int):
     """
     Attempt to connect to the server at the specified IP address and port
@@ -464,7 +463,7 @@ def connect_to_server(ip_address: str, port: int):
     except Exception as e:
         # Connection failed or timed out, so append None to the results list
         return None
-    
+
 
 def main():
     server_ip = detect_server_locally(3108)

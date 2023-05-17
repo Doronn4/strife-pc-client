@@ -387,6 +387,15 @@ class Protocol:
 
     @staticmethod
     def request_user_pfp_check(username, pfp_hash):
+        """
+        A static method for creating a request user pfp check message
+        :param username: The username of the user
+        :type username: str
+        :param pfp_hash: The hash of the pfp
+        :type pfp_hash: str
+        :return: The message after protocol
+        :rtype: str
+        """
         # Get the opcode of request_user_pfp
         opcode = Protocol.general_opcodes['request_user_picture_check']
         # Construct the message

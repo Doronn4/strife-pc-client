@@ -618,7 +618,6 @@ class MainPanel(wx.Panel):
         MainPanel.known_users[username] = user
         return user
 
-
     def get_name_by_id(self, id):
         """
         Gets a user's name by his id
