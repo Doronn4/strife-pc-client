@@ -59,6 +59,9 @@ class VoiceCall:
         :return: -
         """
         # The audio input objects
+        if self.audio_input:
+            self.audio_input.close()
+        self.audio_input = None
         try:
             self.audio_input = self.audio.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE,
                                                input=True, frames_per_buffer=self.CHUNK)
@@ -167,6 +170,7 @@ class VoiceCall:
         Toggles the mic mute
         """
         if self.audio_input is None and self.muted:
+            self.muted = True
             self._init_mic()
         else:
             self.muted = not self.muted

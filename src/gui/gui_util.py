@@ -80,6 +80,7 @@ class User:
         """
         # Get the path to the user's profile picture.
         path = FileHandler.get_pfp_path(self.username)
+        print('path in update pic', path)
 
         # If a path is found, set the user's profile picture to the image at that path.
         if path:
@@ -548,28 +549,27 @@ class SettingsDialog(wx.Dialog):
 
         font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
-        self.name_label = wx.StaticText(self, label='Change username:')
-        self.name_label.SetFont(font)
-        self.name_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
-        self.name_submit_button = wx.Button(self, label='submit', size=(50, 20))
-        self.username_sizer.Add(self.name_label, 1, wx.ALIGN_CENTER)
-        self.username_sizer.AddSpacer(10)
-        self.username_sizer.Add(self.name_input, 1, wx.ALIGN_CENTER)
-        self.username_sizer.AddSpacer(10)
-        self.username_sizer.Add(self.name_submit_button, 1, wx.ALIGN_CENTER)
-        self.name_submit_button.Bind(wx.EVT_BUTTON, self.onUsernameChange)
+        # Changing username is now deprecated
+        # self.name_label = wx.StaticText(self, label='Change username:')
+        # self.name_label.SetFont(font)
+        # self.name_input = wx.TextCtrl(self, style=wx.TE_LEFT, size=(100, 20))
+        # self.name_submit_button = wx.Button(self, label='submit', size=(50, 20))
+        # self.username_sizer.Add(self.name_label, 1, wx.ALIGN_CENTER)
+        # self.username_sizer.AddSpacer(10)
+        # self.username_sizer.Add(self.name_input, 1, wx.ALIGN_CENTER)
+        # self.username_sizer.AddSpacer(10)
+        # self.username_sizer.Add(self.name_submit_button, 1, wx.ALIGN_CENTER)
+        # self.name_submit_button.Bind(wx.EVT_BUTTON, self.onUsernameChange)
 
         self.picture_label = wx.StaticText(self, label='Change profile picture:')
         self.picture_label.SetFont(font)
         self.file_picker = wx.FilePickerCtrl(self, style=wx.FLP_OPEN, wildcard="Image files (*.jpg, *.png, "
                                                                                "*.gif)|*.jpg;*.png;*.gif")
-        self.pic_submit_button = wx.Button(self, label='submit', size=(50, 20))
         self.picture_sizer.Add(self.picture_label, 1, wx.ALIGN_CENTER)
         self.picture_sizer.AddSpacer(10)
-        self.picture_sizer.Add(self.pic_submit_button, 1, wx.ALIGN_CENTER)
         self.picture_sizer.AddSpacer(10)
         self.picture_sizer.Add(self.file_picker, 1, wx.ALIGN_CENTER)
-        self.pic_submit_button.Bind(wx.EVT_BUTTON, self.onPicChange)
+        self.file_picker.Bind(wx.EVT_FILEPICKER_CHANGED, self.onPicChange)
 
         self.status_label = wx.StaticText(self, label='Change status:')
         self.status_label.SetFont(font)
@@ -596,7 +596,7 @@ class SettingsDialog(wx.Dialog):
         self.back_button = wx.Button(self, label='Back', size=(100, 50))
         self.back_button.Bind(wx.EVT_BUTTON, self.onBack)
 
-        self.sizer.Add(self.username_sizer, 1, wx.ALIGN_CENTER)
+        # self.sizer.Add(self.username_sizer, 1, wx.ALIGN_CENTER)
         self.sizer.Add(self.password_sizer, 1, wx.ALIGN_CENTER)
         self.sizer.Add(self.picture_sizer, 1, wx.ALIGN_CENTER)
         self.sizer.Add(self.status_sizer, 1, wx.ALIGN_CENTER)
@@ -1155,7 +1155,7 @@ class CallWindow(wx.Frame):
         # Play the sound
         join_sound.Play(wx.adv.SOUND_ASYNC)
 
-    def onCameraToggle(self, event):
+    def onCameraToggle(self, event, state=None):
         """
         Called when the camera button is pressed.
         :param event: The event.
@@ -1164,7 +1164,7 @@ class CallWindow(wx.Frame):
         if self.is_video:
             if event:
                 self.video_call.toggle_video()
-            # Change the camera button's bitmap
+
             bit = (self.CAMERA_ON_IMAGE if self.video_call.transmit_video else self.CAMERA_OFF_IMAGE)\
                 .Scale(self.camera_button.GetSize()[0], self.camera_button.GetSize()[1]).ConvertToBitmap()
             self.camera_button.SetBitmap(bit)

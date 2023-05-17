@@ -53,9 +53,11 @@ class VideoCall:
         """
         Initiates the camera handler object
         """
+        self.camera = None
         try:
             self.camera = CameraHandler()
         except Exception:
+            print('exception creating camera')
             self.transmit_video = False
             self.parent.onCameraToggle(None)
         else:
@@ -74,6 +76,11 @@ class VideoCall:
             if self.transmit_video:
 
                 frame = self.camera.read()
+
+                if frame is None:
+                    self.transmit_video = False
+                    self.parent.onCameraToggle(None)
+                    continue
 
                 # Update the current user's video frame
                 gui_util.User.this_user.update_video(frame)
@@ -150,6 +157,10 @@ class VideoCall:
         """
         Toggles the video transmission
         """
+        if not self.camera:
+            self.transmit_video = False
+            return
+
         if not self.camera.active and not self.transmit_video:
             self._initiate_camera()
         else:
