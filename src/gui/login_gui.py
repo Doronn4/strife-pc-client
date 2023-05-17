@@ -3,6 +3,7 @@ from src.core.client_protocol import Protocol
 import wx
 from pubsub import pub
 from src.core.keys_manager import KeysManager
+import src.gui.main_gui as main_gui
 
 
 class RegisterPanel(wx.Panel):
@@ -341,7 +342,7 @@ class LoginPanel(wx.Panel):
 
         # Pass the username and password to the main program...
         if not error_str:
-            gui_util.User.this_user = gui_util.User(username=username)
+            gui_util.User.this_user = main_gui.MainPanel.get_user_by_name(username=username)
             msg = Protocol.sign_in(username, password)
             self.parent.general_com.send_data(msg)
 

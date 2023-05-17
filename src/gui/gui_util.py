@@ -80,7 +80,6 @@ class User:
         """
         # Get the path to the user's profile picture.
         path = FileHandler.get_pfp_path(self.username)
-        print('path in update pic', path)
 
         # If a path is found, set the user's profile picture to the image at that path.
         if path:
@@ -240,6 +239,9 @@ class UserBox(wx.Panel):
 
             # Add the vertical sizer to the horizontal sizer
             self.sizer.Add(self.vsizer, 0, wx.ALIGN_CENTER)
+
+    def __str__(self):
+        return f"userbox of {self.user.username}, belongs to {self.parent}"
 
     def handle_click(self, event):
         """
@@ -1461,30 +1463,33 @@ class ChatMessage(wx.Panel):
         self.SetBackgroundColour(wx.Colour(194, 194, 194))
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        user_box = UserBox(self, user, align_right=align_right)
+        self.user_box = UserBox(self, user, align_right=align_right)
 
         # Add the user box to the left of the ChatMessage panel if the message is not from the current user
         if not align_right:
-            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
+            self.sizer.Add(self.user_box, 0, wx.ALIGN_LEFT, border=5)
 
         # Create a wx.StaticText widget with the message and add it to the ChatMessage panel
-        message_label = wx.StaticText(self, label=message)
+        self.message_label = wx.StaticText(self, label=message)
 
         if align_right:
             # Add the message sizer to the ChatMessage panel
-            self.sizer.Add(message_label, 0, wx.ALIGN_RIGHT)
+            self.sizer.Add(self.message_label, 0, wx.ALIGN_RIGHT)
         else:
             self.sizer.AddSpacer(self.GAP)
             # Add the message sizer to the ChatMessage panel
-            self.sizer.Add(message_label, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
+            self.sizer.Add(self.message_label, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER)
 
         # Add the user box to the right of the ChatMessage panel if the message is from the current user
         if align_right:
             self.sizer.AddSpacer(self.GAP)
-            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
+            self.sizer.Add(self.user_box, 0, wx.ALIGN_RIGHT, border=5)
 
         self.SetSizer(self.sizer)
         self.Layout()
+
+    def __str__(self):
+        return f"Chat message object"
 
 
 class FileDescription(wx.Panel):
@@ -1523,10 +1528,10 @@ class FileDescription(wx.Panel):
 
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        user_box = UserBox(self, user, align_right=align_right)
+        self.user_box = UserBox(self, user, align_right=align_right)
 
         if not align_right:
-            self.sizer.Add(user_box, 0, wx.ALIGN_LEFT, border=5)
+            self.sizer.Add(self.user_box, 0, wx.ALIGN_LEFT, border=5)
             self.sizer.AddSpacer(self.GAP)
 
         # Add a label with the file name
@@ -1544,7 +1549,7 @@ class FileDescription(wx.Panel):
 
         if align_right:
             self.sizer.AddSpacer(self.GAP)
-            self.sizer.Add(user_box, 0, wx.ALIGN_RIGHT, border=5)
+            self.sizer.Add(self.user_box, 0, wx.ALIGN_RIGHT, border=5)
 
         self.SetSizer(self.sizer)
 
