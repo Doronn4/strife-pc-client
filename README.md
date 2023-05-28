@@ -1,2 +1,3 @@
 # strife-pc-client
-# Hello
+### Installation
+Install the dependencies and run main.py file

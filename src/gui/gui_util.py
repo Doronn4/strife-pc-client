@@ -1140,9 +1140,9 @@ class CallWindow(wx.Frame):
         :param event: The event.
         :type event: wx.Event
         """
-        self.voice_call.terminate()
+        wx.CallAfter(self.voice_call.terminate)
         if self.is_video and self.video_call:
-            self.video_call.terminate()
+            wx.CallAfter(self.video_call.terminate)
 
         # Unsubscribe from the events
         pub.unsubscribe(self.onVoiceInfo, 'voice_info')
@@ -1150,12 +1150,12 @@ class CallWindow(wx.Frame):
         pub.unsubscribe(self.onVoiceJoined, 'voice_joined')
         pub.unsubscribe(self.onVideoJoined, 'video_joined')
 
-        self.Close()
-
         # Create a sound object
         join_sound = wx.adv.Sound("sounds/call_leave.wav")
         # Play the sound
         join_sound.Play(wx.adv.SOUND_ASYNC)
+
+        self.Close()
 
     def onCameraToggle(self, event, state=None):
         """
