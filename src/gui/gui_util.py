@@ -930,7 +930,7 @@ class CallGrid(wx.GridSizer):
         self.parent.Layout()
 
 
-class CallWindow(wx.Frame):
+class CallWindow(wx.MiniFrame):
     """
     A class for creating a call window.
     """
@@ -1143,7 +1143,7 @@ class CallWindow(wx.Frame):
         # Play the sound
         leave_sound.Play(wx.adv.SOUND_ASYNC)
 
-        self.Close()
+        self.Destroy()
 
     def onCameraToggle(self, event, state=None):
         """
