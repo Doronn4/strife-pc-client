@@ -1143,11 +1143,8 @@ class CallWindow(wx.MiniFrame):
         leave_sound.Play(wx.adv.SOUND_ASYNC)
 
         self.call_grid.Clear(True)
-        print(self.GetChildren(), 'before')
         self.call_grid = None
-        print(self.GetDefaultAttributes())
-        self.Destroy()
-        print(self, 'after')
+        wx.CallAfter(self.Destroy)
 
     def onCameraToggle(self, event, state=None):
         """
