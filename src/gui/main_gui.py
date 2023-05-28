@@ -51,6 +51,10 @@ class MainPanel(wx.Panel):
         self.RELATIVE_BUTTON_SIZE = 0.04
         self.RELATIVE_SIZE = 0.75  # The relative size of the window to the screen
 
+        self.call_join_sound = wx.adv.Sound("sounds/call_join.wav")
+        self.call_leave_sound = wx.adv.Sound("sounds/call_leave.wav")
+        self.call_ring_sound = wx.adv.Sound("sounds/strife_ring.wav")
+
         self.parent = parent
 
         # Sub windows
@@ -153,6 +157,7 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onVoiceStart, 'voice_started')
         pub.subscribe(self.onVideoStart, 'video_started')
         self.load_friends()
+
 
     def request_user_pfp(self, username):
         pfp_hash = FileHandler.get_pfp_hash(username)
@@ -695,9 +700,18 @@ class MainFrame(wx.Frame):
         menu.Append(2, "Exit")
         # Bind the menu options to functions
         menu.Bind(wx.EVT_MENU, lambda e: self.Show(), id=1)
-        menu.Bind(wx.EVT_MENU, lambda e: self.close_app(), id=2)
+        menu.Bind(wx.EVT_MENU, self.exit_program, id=2)
         # Show the menu
         self.taskbar_icon.PopupMenu(menu)
+
+    def exit_program(self, event):
+        """
+        Called when the program is exited
+        :param event: The event
+        :return: -
+        """
+        self.taskbar_icon.Destroy()
+        self.close_app()
 
     def onConnectionLost(self):
         """

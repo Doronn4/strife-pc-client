@@ -94,7 +94,6 @@ class VoiceCall:
             for ip, user in call_members_copy.items():
                 # If the user hasn't updated his last_audio_update in the last CALL_TIMEOUT seconds
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
-                    print(f"User {user.username} has left the call")
                     # Remove the user from the call
                     self.parent.remove_user(ip)
 
@@ -159,8 +158,7 @@ class VoiceCall:
         # Initiate the user's last_audio_update
         user.last_audio_update = time.time()
 
-        # Create a sound object
-        join_sound = wx.adv.Sound("sounds/call_join.wav")
+        join_sound = wx.GetApp().GetTopWindow().main_panel.call_join_sound
         # Play the sound
         join_sound.Play(wx.adv.SOUND_ASYNC)
 
@@ -171,7 +169,7 @@ class VoiceCall:
         if ip in self.call_members.keys():
             del self.call_members[ip]
             # Create a sound object
-            leave_sound = wx.adv.Sound("sounds/call_leave.wav")
+            leave_sound = wx.GetApp().GetTopWindow().main_panel.call_leave_sound
             # Play the sound
             leave_sound.Play(wx.adv.SOUND_ASYNC)
 

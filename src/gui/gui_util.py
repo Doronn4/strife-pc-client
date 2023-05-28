@@ -1151,9 +1151,9 @@ class CallWindow(wx.Frame):
         pub.unsubscribe(self.onVideoJoined, 'video_joined')
 
         # Create a sound object
-        join_sound = wx.adv.Sound("sounds/call_leave.wav")
+        leave_sound = wx.GetApp().GetTopWindow().main_panel.call_leave_sound
         # Play the sound
-        join_sound.Play(wx.adv.SOUND_ASYNC)
+        leave_sound.Play(wx.adv.SOUND_ASYNC)
 
         self.Close()
 
@@ -2057,7 +2057,7 @@ class CallDialog(wx.PopupTransientWindow):
                                parent.GetPosition().y + parent.GetSize().y / 2 - self.GetSize().y / 2), size_to_set)
 
         # Create a sound object
-        self.call_sound = wx.adv.Sound("sounds/strife_ring.wav")
+        self.call_sound = wx.GetApp().GetTopWindow().main_panel.call_ring_sound
 
         if random.randint(1, 1000) == 69:
             self.call_sound = wx.adv.Sound("sounds/u.wav")
