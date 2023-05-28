@@ -97,8 +97,8 @@ class VoiceCall:
                     # Remove the user from the call
                     self.parent.remove_user(ip)
 
-        # Check every second
-        time.sleep(1)
+            # Check every second
+            time.sleep(1)
 
     def send_audio(self):
         """
