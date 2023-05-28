@@ -1138,12 +1138,6 @@ class CallWindow(wx.Frame):
         if self.is_video and self.video_call:
             wx.CallAfter(self.video_call.terminate)
 
-        # # Unsubscribe from the events
-        # pub.unsubscribe(self.onVoiceInfo, 'voice_info')
-        # pub.unsubscribe(self.onVideoInfo, 'video_info')
-        # pub.unsubscribe(self.onVoiceJoined, 'voice_joined')
-        # pub.unsubscribe(self.onVideoJoined, 'video_joined')
-
         # Create a sound object
         leave_sound = wx.GetApp().GetTopWindow().main_panel.call_leave_sound
         # Play the sound
