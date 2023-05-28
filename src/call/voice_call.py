@@ -88,8 +88,6 @@ class VoiceCall:
         Checks if the users are still in the call, and removes the ones that aren't
         """
         while self.active:
-            # Check every second
-            time.sleep(1)
             # A copy of the call members dict
             call_members_copy = self.call_members.copy()
             # Check if the users are still in the call
@@ -98,6 +96,9 @@ class VoiceCall:
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
                     # Remove the user from the call
                     self.parent.remove_user(ip)
+
+        # Check every second
+        time.sleep(1)
 
     def send_audio(self):
         """
