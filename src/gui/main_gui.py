@@ -156,6 +156,10 @@ class MainPanel(wx.Panel):
         pub.subscribe(self.onUserStatus, 'user_status')
         pub.subscribe(self.onVoiceStart, 'voice_started')
         pub.subscribe(self.onVideoStart, 'video_started')
+        pub.subscribe(self.onVoiceInfo, 'voice_info')
+        pub.subscribe(self.onVideoInfo, 'video_info')
+        pub.subscribe(self.onVoiceJoined, 'voice_joined')
+        pub.subscribe(self.onVideoJoined, 'video_joined')
         self.load_friends()
 
 
@@ -260,6 +264,34 @@ class MainPanel(wx.Panel):
         self.parent.general_com.send_data(msg)
 
         self.request_user_pfp(gui_util.User.this_user.username)
+
+    def onVoiceInfo(self, chat_id, ips, usernames):
+        """
+        Handle the voice call info
+        """
+        if self.voice_call_window:
+            self.voice_call_window.onVoiceInfo(chat_id, ips, usernames)
+
+    def onVideoInfo(self, chat_id, ips, usernames):
+        """
+        Handle the video call info
+        """
+        if self.video_call_window:
+            self.video_call_window.onVideoInfo(chat_id, ips, usernames)
+
+    def onVoiceJoined(self, chat_id, ip, username):
+        """
+        Handle the voice call join
+        """
+        if self.voice_call_window:
+            self.voice_call_window.onVoiceJoined(chat_id, ip, username)
+
+    def onVideoJoined(self, chat_id, ip, username):
+        """
+        Handle the video call join
+        """
+        if self.video_call_window:
+            self.video_call_window.onVideoJoined(chat_id, ip, username)
 
     def onAddFriendAnswer(self, is_valid):
         """
