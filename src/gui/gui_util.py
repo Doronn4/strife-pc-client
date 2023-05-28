@@ -922,7 +922,6 @@ class CallGrid(wx.GridSizer):
                 self.Remove(index)
                 # Remove the panel from the list and break the loop
                 self.users_panels.remove(panel)
-                panel: CallUserPanel
                 panel.DestroyLater()
                 break
 
@@ -1143,6 +1142,8 @@ class CallWindow(wx.MiniFrame):
         # Play the sound
         leave_sound.Play(wx.adv.SOUND_ASYNC)
 
+        self.call_grid.Clear(True)
+        self.call_grid = None
         self.Destroy()
 
     def onCameraToggle(self, event, state=None):
