@@ -170,9 +170,11 @@ class User:
         """
         This method closes the audio output.
         """
-        if self.audio_output:
-            self.audio_output.close()
-            self.audio_output = None
+        if self.audio_output is not None:
+            if not self.audio_output.is_stopped():
+                self.audio_output.stop_stream()
+                self.audio_output.close()
+                self.audio_output = None
 
 
 class UserBox(wx.Panel):
