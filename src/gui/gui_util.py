@@ -1137,9 +1137,9 @@ class CallWindow(wx.MiniFrame):
         :type event: wx.Event
         """
         if self.voice_call:
-            wx.CallAfter(self.voice_call.terminate)
+            self.voice_call.terminate()
         if self.is_video and self.video_call:
-            wx.CallAfter(self.video_call.terminate)
+            self.video_call.terminate()
 
         # Create a sound object
         leave_sound = wx.GetApp().GetTopWindow().main_panel.call_leave_sound
@@ -1149,6 +1149,8 @@ class CallWindow(wx.MiniFrame):
         if self.call_grid:
             self.call_grid.Clear(True)
             self.call_grid = None
+
+        self.Reparent(None)
 
         if not self.IsBeingDeleted():
             logging.debug("Before SafeYield()")

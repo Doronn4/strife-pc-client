@@ -453,6 +453,7 @@ class MainPanel(wx.Panel):
         # Check if there is already a call dialog for this chat
         # And if there isn't an ongoing call for this chat
         call_exists = False
+        logging.debug('accessing voice_call_window')
         if self.voice_call_window and self.voice_call_window.IsShown():
             call_exists = self.voice_call_window.chat_id == chat_id
         if self.voice_call_window and self.voice_call_window.IsShown():
@@ -496,6 +497,7 @@ class MainPanel(wx.Panel):
         """
         # Hang up ongoing calls
         if self.voice_call_window:
+            logging.debug('accessing voice call window')
             self.voice_call_window.onHangup(None)
         if self.video_call_window:
             self.video_call_window.onHangup(None)
@@ -542,6 +544,7 @@ class MainPanel(wx.Panel):
             return
 
         if self.voice_call_window:
+            logging.debug('accessing voice call window')
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
@@ -568,7 +571,6 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return: -
         """
-        logging.debug('onVideo')
         active_call = False
 
         if type(event) != int:
@@ -581,6 +583,7 @@ class MainPanel(wx.Panel):
             return
 
         if self.voice_call_window:
+            logging.debug('accessing voice call window')
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
