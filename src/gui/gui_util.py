@@ -1137,7 +1137,7 @@ class CallWindow(wx.MiniFrame):
         :type event: wx.Event
         """
         if self.voice_call:
-            self.voice_call.terminate()
+            wx.CallAfter(self.voice_call.terminate)
         if self.is_video and self.video_call:
             self.video_call.terminate()
 
