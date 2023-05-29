@@ -1133,7 +1133,8 @@ class CallWindow(wx.MiniFrame):
         :param event: The event.
         :type event: wx.Event
         """
-        wx.CallAfter(self.voice_call.terminate)
+        if self.voice_call:
+            wx.CallAfter(self.voice_call.terminate)
         if self.is_video and self.video_call:
             wx.CallAfter(self.video_call.terminate)
 
@@ -1142,9 +1143,13 @@ class CallWindow(wx.MiniFrame):
         # Play the sound
         leave_sound.Play(wx.adv.SOUND_ASYNC)
 
-        self.call_grid.Clear(True)
-        self.call_grid = None
-        wx.CallAfter(self.Destroy)
+        if self.call_grid:
+            self.call_grid.Clear(True)
+            self.call_grid = None
+
+        if not self.IsBeingDeleted():
+            wx.SafeYield()
+            wx.CallAfter(self.Destroy)
 
     def onCameraToggle(self, event, state=None):
         """
