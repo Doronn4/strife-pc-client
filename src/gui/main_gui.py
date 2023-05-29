@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import threading
 import wx
@@ -269,7 +270,7 @@ class MainPanel(wx.Panel):
         """
         Handle the voice call info
         """
-        print('onVoiceInfo')
+        logging.debug('onVoiceInfo')
         if self.voice_call_window:
             self.voice_call_window.onVoiceInfo(chat_id, ips, usernames)
 
@@ -284,7 +285,7 @@ class MainPanel(wx.Panel):
         """
         Handle the voice call join
         """
-        print('onVoiceJoined')
+        logging.debug('onVoiceJoined')
         if self.voice_call_window:
             self.voice_call_window.onVoiceJoined(chat_id, ip, username)
 
@@ -528,7 +529,7 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return -
         """
-        print("voice call")
+        logging.debug("voice call")
         active_call = False
 
         if type(event) != int:
@@ -567,7 +568,7 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return: -
         """
-        print('onVideo')
+        logging.debug('onVideo')
         active_call = False
 
         if type(event) != int:
