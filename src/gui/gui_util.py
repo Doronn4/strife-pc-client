@@ -1150,26 +1150,6 @@ class CallWindow(wx.MiniFrame):
             self.call_grid.Clear(True)
             self.call_grid = None
 
-        self.toolbar.Destroy()
-        self.toolbar = None
-        self.title_sizer.Destroy()
-        self.title_sizer = None
-        self.title.Destroy()
-        self.title = None
-        self.mute_button.Destroy()
-        self.mute_button = None
-        self.camera_button.Destroy()
-        self.camera_button = None
-        self.leave_call_button.Destroy()
-        self.leave_call_button = None
-        self.call_members = None
-        self.sizer.Destroy()
-        self.CAMERA_ON_IMAGE.Destroy()
-        self.CAMERA_OFF_IMAGE.Destroy()
-        self.MUTE_BUTTON_IMAGE.Destroy()
-        self.MUTED_BUTTON_IMAGE.Destroy()
-        self.LEAVE_BUTTON_IMAGE.Destroy()
-
         self.Reparent(None)
 
         if not self.IsBeingDeleted():
@@ -1178,7 +1158,7 @@ class CallWindow(wx.MiniFrame):
             logging.debug("After SafeYield()")
             if not self.IsBeingDeleted():
                 logging.debug("Before Destroy()")
-                wx.CallLater(300, self.Destroy)
+                wx.CallLater(300, self.Close)
                 logging.debug("After Destroy()")
 
     def onCameraToggle(self, event, state=None):
