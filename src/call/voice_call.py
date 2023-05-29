@@ -199,12 +199,12 @@ class VoiceCall:
         """
         try:
             self.active = False
-            if self.audio_input:
-                self.audio_input.close()
-            for user in self.call_members.values():
-                if user.audio_output:
-                    user.audio_output.close()
-                    user.audio_output = None
+            # if self.audio_input:
+            #     self.audio_input.close()
+            # for user in self.call_members.values():
+            #     if user.audio_output:
+            #         user.audio_output.close()
+            #         user.audio_output = None
 
             self.socket.close()
         except Exception as e:
