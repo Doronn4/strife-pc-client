@@ -179,6 +179,9 @@ class VoiceCall:
         Removes a user from the call
         """
         if ip in self.call_members.keys():
+            # Close the user's audio
+            self.call_members[ip].close_audio()
+            # Remove the user from the call
             del self.call_members[ip]
             # Create a sound object
             leave_sound = wx.GetApp().GetTopWindow().main_panel.call_leave_sound
