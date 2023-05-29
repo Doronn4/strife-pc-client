@@ -152,13 +152,27 @@ class User:
         :return: None
         """
         # If the audio output is not initialized, initialize it.
+        if self.audio_output:
+            # Write the audio frame to the audio output.
+            self.audio_output.write(audio_frame)
+            self.last_audio_update = time.time()
+
+    def open_audio(self):
+        """
+        This method opens the audio output.
+        """
         if not self.audio_output:
             self.audio_output = User.audio.open(format=VoiceCall.FORMAT, channels=VoiceCall.CHANNELS,
                                                 rate=VoiceCall.RATE, output=True,
                                                 frames_per_buffer=VoiceCall.CHUNK)
-        # Write the audio frame to the audio output.
-        self.audio_output.write(audio_frame)
-        self.last_audio_update = time.time()
+
+    def close_audio(self):
+        """
+        This method closes the audio output.
+        """
+        if self.audio_output:
+            self.audio_output.close()
+            self.audio_output = None
 
 
 class UserBox(wx.Panel):

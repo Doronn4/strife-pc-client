@@ -162,11 +162,13 @@ class VoiceCall:
         Adds a user to the call
         """
         self.call_members[ip] = user
-        logging.debug('accessing parent to add user to grid')
         wx.CallAfter(self.parent.call_grid.add_user, user)
 
         # Initiate the user's last_audio_update
         user.last_audio_update = time.time()
+
+        # Open the user audio
+        user.open_audio()
 
         join_sound = wx.GetApp().GetTopWindow().main_panel.call_join_sound
         # Play the sound
@@ -199,12 +201,10 @@ class VoiceCall:
         """
         try:
             self.active = False
-            # if self.audio_input:
-            #     self.audio_input.close()
-            # for user in self.call_members.values():
-            #     if user.audio_output:
-            #         user.audio_output.close()
-            #         user.audio_output = None
+            if self.audio_input:
+                self.audio_input.close()
+            for user in self.call_members.values():
+                user.close_audio()
 
             self.socket.close()
         except Exception as e:
