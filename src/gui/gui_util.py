@@ -2,6 +2,7 @@ import hashlib
 import logging
 import os
 import random
+import sys
 import threading
 import pyaudio
 import time
@@ -20,6 +21,7 @@ from src.call.voice_call import VoiceCall
 import wx.lib.agw.toasterbox as toaster
 import wx.adv
 
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
 TEXT_COLOR = wx.Colour(237, 99, 99)
 MAX_PARTICIPANTS = 6
