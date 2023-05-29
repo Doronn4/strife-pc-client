@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import random
 import threading
@@ -1148,8 +1149,13 @@ class CallWindow(wx.MiniFrame):
             self.call_grid = None
 
         if not self.IsBeingDeleted():
+            logging.debug("Before SafeYield()")
             wx.SafeYield()
-            wx.CallAfter(self.Destroy)
+            logging.debug("After SafeYield()")
+            if not self.IsBeingDeleted():
+                logging.debug("Before Destroy()")
+                self.Destroy()
+                logging.debug("After Destroy()")
 
     def onCameraToggle(self, event, state=None):
         """

@@ -497,6 +497,7 @@ def main():
 
     # Start the GUI
     app = wx.App()
+    app.SetAssertMode(wx.APP_ASSERT_EXCEPTION)
     # Don't exit the app when the main frame is closed
     app.SetExitOnFrameDelete(False)
 
