@@ -1,3 +1,4 @@
+import logging
 import queue
 import socket
 import threading
@@ -67,6 +68,7 @@ class VoiceCall:
                                                input=True, frames_per_buffer=self.CHUNK)
         except Exception:
             self.muted = True
+            logging.debug('Failed to initialize the mic, accessing parent')
             self.parent.onMuteToggle(None)
         else:
             self.muted = False
@@ -95,6 +97,7 @@ class VoiceCall:
                 # If the user hasn't updated his last_audio_update in the last CALL_TIMEOUT seconds
                 if user.last_audio_update + VoiceCall.CALL_TIMEOUT < time.time():
                     # Remove the user from the call
+                    logging.debug('removing user, access parent')
                     self.parent.remove_user(ip)
 
             # Check every second
@@ -140,6 +143,7 @@ class VoiceCall:
 
             # If the user is not in the call, add them
             if ip not in self.call_members.keys():
+                logging.debug('accessing parent to get user by ip')
                 if ip in self.parent.call_members.keys():
                     self.add_user(ip, self.parent.get_user_by_ip(ip))
                 else:
@@ -153,6 +157,7 @@ class VoiceCall:
         Adds a user to the call
         """
         self.call_members[ip] = user
+        logging.debug('accessing parent to add user to grid')
         wx.CallAfter(self.parent.call_grid.add_user, user)
 
         # Initiate the user's last_audio_update
