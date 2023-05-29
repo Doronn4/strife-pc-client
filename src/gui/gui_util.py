@@ -1158,7 +1158,7 @@ class CallWindow(wx.MiniFrame):
             logging.debug("After SafeYield()")
             if not self.IsBeingDeleted():
                 logging.debug("Before Destroy()")
-                self.Destroy()
+                wx.CallLater(300, self.Destroy)
                 logging.debug("After Destroy()")
 
     def onCameraToggle(self, event, state=None):
