@@ -126,7 +126,10 @@ class VoiceCall:
             ips = list(self.call_members.keys())
             # send the data to the ips
             for ip in ips:
-                self.socket.sendto(data, (ip, self.port))
+                try:
+                    self.socket.sendto(data, (ip, self.port))
+                except Exception:
+                    break
 
     def receive_audio(self):
         """
