@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import threading
 import wx
@@ -270,7 +269,6 @@ class MainPanel(wx.Panel):
         """
         Handle the voice call info
         """
-        logging.debug('onVoiceInfo')
         if self.voice_call_window:
             self.voice_call_window.onVoiceInfo(chat_id, ips, usernames)
 
@@ -285,7 +283,6 @@ class MainPanel(wx.Panel):
         """
         Handle the voice call join
         """
-        logging.debug('onVoiceJoined')
         if self.voice_call_window:
             self.voice_call_window.onVoiceJoined(chat_id, ip, username)
 
@@ -453,7 +450,6 @@ class MainPanel(wx.Panel):
         # Check if there is already a call dialog for this chat
         # And if there isn't an ongoing call for this chat
         call_exists = False
-        logging.debug('accessing voice_call_window')
         if self.voice_call_window and self.voice_call_window.IsShown():
             call_exists = self.voice_call_window.chat_id == chat_id
         if self.voice_call_window and self.voice_call_window.IsShown():
@@ -464,7 +460,8 @@ class MainPanel(wx.Panel):
             self.incoming_calls[chat_id] = gui_util.CallDialog \
                 (self, f"incoming voice call from {title}", chat_id, 'voice')
             # Show the dialog
-            self.incoming_calls[chat_id].Popup()
+            # self.incoming_calls[chat_id].Popup()
+            self.incoming_calls[chat_id].Show()
 
     def onVideoStart(self, chat_id):
         """
@@ -497,7 +494,6 @@ class MainPanel(wx.Panel):
         """
         # Hang up ongoing calls
         if self.voice_call_window:
-            logging.debug('accessing voice call window')
             self.voice_call_window.onHangup(None)
         if self.video_call_window:
             self.video_call_window.onHangup(None)
@@ -510,7 +506,7 @@ class MainPanel(wx.Panel):
             msg = Protocol.join_voice(chat_id)
             self.onVoice(chat_id)
 
-        dialog.Dismiss()
+        wx.CallAfter(dialog.Destroy)
         del self.incoming_calls[chat_id]
         self.parent.general_com.send_data(msg)
 
@@ -521,9 +517,10 @@ class MainPanel(wx.Panel):
         :type chat_id: int
         :return: -
         """
-        dialog = self.incoming_calls[chat_id]
-        dialog.Dismiss()
-        del self.incoming_calls[chat_id]
+        if chat_id in self.incoming_calls.keys():
+            dialog = self.incoming_calls[chat_id]
+            wx.CallAfter(dialog.Destroy)
+            del self.incoming_calls[chat_id]
 
     def onVoice(self, event):
         """
@@ -531,7 +528,6 @@ class MainPanel(wx.Panel):
         :param event: The wx event or None if the call was received
         :return -
         """
-        logging.debug("voice call")
         active_call = False
 
         if type(event) != int:
@@ -544,7 +540,6 @@ class MainPanel(wx.Panel):
             return
 
         if self.voice_call_window:
-            logging.debug('accessing voice call window')
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
@@ -583,7 +578,6 @@ class MainPanel(wx.Panel):
             return
 
         if self.voice_call_window:
-            logging.debug('accessing voice call window')
             active_call = self.voice_call_window.IsShown()
         if self.video_call_window:
             active_call = self.video_call_window.IsShown()
@@ -629,7 +623,7 @@ class MainPanel(wx.Panel):
         if self.settings_window:
             self.settings_window.Close()
         for dialog in self.incoming_calls.values():
-            dialog.Dismiss()
+            wx.CallAfter(dialog.Destroy)
 
         self.incoming_calls = {}
         MainPanel.known_users = {}

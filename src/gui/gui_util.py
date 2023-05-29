@@ -1,8 +1,6 @@
 import hashlib
-import logging
 import os
 import random
-import sys
 import threading
 import pyaudio
 import time
@@ -21,7 +19,6 @@ from src.call.voice_call import VoiceCall
 import wx.lib.agw.toasterbox as toaster
 import wx.adv
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 STRIFE_BACKGROUND_COLOR = wx.Colour(0, 53, 69)
 TEXT_COLOR = wx.Colour(237, 99, 99)
 MAX_PARTICIPANTS = 6
@@ -1169,13 +1166,9 @@ class CallWindow(wx.MiniFrame):
         self.Reparent(None)
 
         if not self.IsBeingDeleted():
-            logging.debug("Before SafeYield()")
             wx.SafeYield()
-            logging.debug("After SafeYield()")
             if not self.IsBeingDeleted():
-                logging.debug("Before Destroy()")
                 self.Destroy()
-                logging.debug("After Destroy()")
 
     def onCameraToggle(self, event, state=None):
         """
@@ -2023,7 +2016,7 @@ class AddFriendDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 
-class CallDialog(wx.PopupTransientWindow):
+class CallDialog(wx.PopupWindow):
     """
     A dialog for accepting or declining a call.
     """
@@ -2084,6 +2077,9 @@ class CallDialog(wx.PopupTransientWindow):
 
         # Play the sound
         self.call_sound.Play(wx.adv.SOUND_ASYNC)
+
+        # Create a thread to close the dialog after 7 seconds
+        threading.Timer(7, self.on_decline, (None,)).start()
 
     def on_join(self, event):
         """
