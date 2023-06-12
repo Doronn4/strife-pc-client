@@ -100,8 +100,8 @@ class VideoCall:
                         self.socket.sendto(data, (ip, self.port))
                     except Exception:
                         break
-                # Sleep 1/FPS of a second to send only the desired frame rate
-                time.sleep((1/self.FPS))
+            # Sleep 1/FPS of a second to send only the desired frame rate
+            time.sleep((1/self.FPS))
 
     def receive_videos(self):
         """

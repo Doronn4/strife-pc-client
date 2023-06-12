@@ -972,8 +972,8 @@ class CallWindow(wx.MiniFrame):
         self.MUTE_BUTTON_IMAGE = wx.Image("assets/unmute.png", wx.BITMAP_TYPE_ANY)
         self.MUTED_BUTTON_IMAGE = wx.Image("assets/mute.png", wx.BITMAP_TYPE_ANY)
         self.LEAVE_BUTTON_IMAGE = wx.Image("assets/leave.png", wx.BITMAP_TYPE_ANY)
-        self.CAMERA_ON_IMAGE = wx.Image("assets/turn_off_camera.png", wx.BITMAP_TYPE_ANY)
-        self.CAMERA_OFF_IMAGE = wx.Image("assets/turn_on_camera.png", wx.BITMAP_TYPE_ANY)
+        self.CAMERA_ON_IMAGE = wx.Image("assets/turn_on_camera.png", wx.BITMAP_TYPE_ANY)
+        self.CAMERA_OFF_IMAGE = wx.Image("assets/turn_off_camera.png", wx.BITMAP_TYPE_ANY)
 
         self.RELATIVE_BUTTON_SIZE = 0.1
 
