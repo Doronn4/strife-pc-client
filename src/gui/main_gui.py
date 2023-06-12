@@ -483,7 +483,7 @@ class MainPanel(wx.Panel):
             self.incoming_calls[chat_id] = gui_util.CallDialog(self, f"incoming video call from {title}", chat_id,
                                                                'video')
             # Show the dialog
-            self.incoming_calls[chat_id].Popup()
+            self.incoming_calls[chat_id].Show()
 
     def on_join(self, chat_id):
         """
